@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Leaf,
   ShoppingCart,
@@ -18,7 +18,36 @@ import {
   PackagePlus,
   ImageOff,
   Camera,
+  Star,
+  MessageSquare,
+  MapPin,
 } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// Persistent state — same API as useState, but reads/writes localStorage
+// so the value survives a page reload.
+// ---------------------------------------------------------------------------
+
+function usePersistentState(key, initialValue) {
+  const [state, setState] = useState(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved !== null ? JSON.parse(saved) : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch {
+      // ignore quota / serialization errors
+    }
+  }, [key, state]);
+
+  return [state, setState];
+}
 
 // ---------------------------------------------------------------------------
 // Data
@@ -745,12 +774,143 @@ function photoUrl(product, w = 480, h = 360) {
 }
 
 // ---------------------------------------------------------------------------
+// Deterministic "fake backend" content for the product detail page —
+// seeded off the product id so the same product always shows the same
+// description, rating and reviews (no backend, but stable across renders).
+// ---------------------------------------------------------------------------
+
+function seededRandom(seedStr) {
+  let h = 1779033703 ^ seedStr.length;
+  for (let i = 0; i < seedStr.length; i++) {
+    h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function () {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  };
+}
+
+const REVIEW_NAMES = [
+  "Anjali M.",
+  "Rohan D.",
+  "Priya S.",
+  "Karan V.",
+  "Meera J.",
+  "Arjun K.",
+  "Sneha R.",
+  "Vikram T.",
+  "Divya N.",
+  "Sameer P.",
+  "Ritu B.",
+  "Faisal A.",
+];
+
+const REVIEW_TEMPLATES = [
+  "Really fresh — arrived in great condition and tasted like it came straight from the farm.",
+  "Good quality for the price. Will order again for the household.",
+  "Packaging was solid and the {unit} weight was spot on.",
+  "This is now our regular order. Consistent quality every time.",
+  "Nice quality overall, though delivery took a little longer than expected.",
+  "Better than what I usually get at the local market. Happy with this.",
+  "Great value when buying in bulk for the shop.",
+  "Tasted fresh and the farmer details on the listing gave me confidence.",
+  "Solid everyday pick — nothing fancy, just reliably good.",
+  "Would recommend to anyone looking for farm-direct produce.",
+];
+
+function generateDescription(product) {
+  const rnd = seededRandom(product.id + product.name);
+  const notes = [
+    "sun-ripened",
+    "hand-picked",
+    "carefully sorted",
+    "harvest-fresh",
+    "traditionally grown",
+    "small-batch",
+  ];
+  const uses = [
+    "everyday cooking",
+    "festive meals",
+    "your kitchen staples",
+    "bulk meal prep",
+    "gifting and home use",
+  ];
+  const note = notes[Math.floor(rnd() * notes.length)];
+  const use = uses[Math.floor(rnd() * uses.length)];
+  return `${note[0].toUpperCase()}${note.slice(1)} ${product.name.toLowerCase()} sourced directly from ${product.farmer}, grown in the ${product.category.toLowerCase()} belt of their region. Sold by the ${product.unit}, it's a favorite for ${use}. Buying direct means the farmer earns a fairer share and you skip the middlemen markup — households pay ${money(
+    product.indivPrice,
+  )}/${product.unit}, while verified businesses ordering at least ${product.minBulkQty} ${product.unit} unlock the bulk rate of ${money(product.bizPrice)}/${product.unit}.`;
+}
+
+function generateReviews(product) {
+  const rnd = seededRandom("rev-" + product.id);
+  const count = 3 + Math.floor(rnd() * 4); // 3-6 reviews
+  const reviews = [];
+  const usedNames = new Set();
+  for (let i = 0; i < count; i++) {
+    let name = REVIEW_NAMES[Math.floor(rnd() * REVIEW_NAMES.length)];
+    while (usedNames.has(name) && usedNames.size < REVIEW_NAMES.length) {
+      name = REVIEW_NAMES[Math.floor(rnd() * REVIEW_NAMES.length)];
+    }
+    usedNames.add(name);
+    const rating = Math.min(5, 3 + Math.round(rnd() * 2)); // 3-5 stars
+    const template =
+      REVIEW_TEMPLATES[Math.floor(rnd() * REVIEW_TEMPLATES.length)];
+    const daysAgo = 2 + Math.floor(rnd() * 85);
+    reviews.push({
+      id: `${product.id}-r${i}`,
+      name,
+      rating,
+      text: template.replace("{unit}", product.unit),
+      daysAgo,
+    });
+  }
+  return reviews.sort((a, b) => a.daysAgo - b.daysAgo);
+}
+
+function avgRating(reviews) {
+  if (!reviews.length) return 0;
+  return reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+}
+
+function timeAgo(days) {
+  if (days < 1) return "today";
+  if (days === 1) return "1 day ago";
+  if (days < 30) return `${days} days ago`;
+  const months = Math.round(days / 30);
+  return months === 1 ? "1 month ago" : `${months} months ago`;
+}
+
+function StarRow({ rating, size = "w-3.5 h-3.5" }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          className={`${size} ${
+            n <= Math.round(rating)
+              ? "fill-[#C9A227] text-[#C9A227]"
+              : "text-[#D8CBA1]"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Root component — role gate
 // ---------------------------------------------------------------------------
 
 export default function FarmMarketplace() {
-  const [role, setRole] = useState(null); // null | 'consumer' | 'farmer'
-  const [farmerProducts, setFarmerProducts] = useState([]);
+  const [role, setRole] = usePersistentState("ks_role", null); // null | 'consumer' | 'farmer'
+  const [farmerProducts, setFarmerProducts] = usePersistentState(
+    "ks_farmerProducts",
+    [],
+  );
 
   const allProducts = useMemo(
     () => [...farmerProducts, ...PRODUCTS],
@@ -1260,13 +1420,20 @@ function Field({ label, error, children }) {
 // ---------------------------------------------------------------------------
 
 function ConsumerMarketplace({ allProducts, onSwitch }) {
-  const [consumerType, setConsumerType] = useState("individual"); // 'individual' | 'business'
-  const [gstin, setGstin] = useState("");
+  const [consumerType, setConsumerType] = usePersistentState(
+    "ks_consumerType",
+    "individual",
+  ); // 'individual' | 'business'
+  const [gstin, setGstin] = usePersistentState("ks_gstin", "");
   const [gstinTouched, setGstinTouched] = useState(false);
-  const [category, setCategory] = useState("All");
-  const [maxSaverOnly, setMaxSaverOnly] = useState(false);
-  const [cart, setCart] = useState({}); // id -> qty
-  const [cartOpen, setCartOpen] = useState(false);
+  const [category, setCategory] = usePersistentState("ks_category", "All");
+  const [maxSaverOnly, setMaxSaverOnly] = usePersistentState(
+    "ks_maxSaverOnly",
+    false,
+  );
+  const [cart, setCart] = usePersistentState("ks_cart", {}); // id -> qty
+  const [view, setView] = useState("shop"); // 'shop' | 'cart' | 'product'
+  const [selectedProductId, setSelectedProductId] = useState(null);
   const [toast, setToast] = useState(null);
 
   const isBusiness = consumerType === "business";
@@ -1328,6 +1495,16 @@ function ConsumerMarketplace({ allProducts, onSwitch }) {
     });
   }
 
+  function openProduct(product) {
+    setSelectedProductId(product.id);
+    setView("product");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
+  const selectedProduct = selectedProductId
+    ? allProducts.find((p) => p.id === selectedProductId)
+    : null;
+
   const cartLines = Object.entries(cart)
     .map(([id, qty]) => ({
       product: allProducts.find((p) => p.id === id),
@@ -1385,7 +1562,8 @@ function ConsumerMarketplace({ allProducts, onSwitch }) {
               />
               <CartButton
                 count={cartLines.length}
-                onClick={() => setCartOpen(true)}
+                active={view === "cart"}
+                onClick={() => setView(view === "cart" ? "shop" : "cart")}
               />
             </div>
           </div>
@@ -1404,231 +1582,170 @@ function ConsumerMarketplace({ allProducts, onSwitch }) {
             </div>
             <CartButton
               count={cartLines.length}
-              onClick={() => setCartOpen(true)}
+              active={view === "cart"}
+              onClick={() => setView(view === "cart" ? "shop" : "cart")}
             />
           </div>
         </header>
 
-        <section className="max-w-6xl mx-auto px-5 pt-12 pb-10">
-          <div className="max-w-xl">
-            <h1 className="ff-display text-4xl sm:text-5xl leading-[1.08] text-[#F3ECDD]">
-              Straight from the field, priced for who's buying.
-            </h1>
-            <p className="mt-4 text-[15px] leading-relaxed text-[#C9C3AE] max-w-md">
-              Households pay a fair per-unit price. Registered businesses buying
-              in bulk get farmer-direct rates on premium produce — no middlemen,
-              just a valid GSTIN and a minimum order size.
-            </p>
-          </div>
+        {view === "shop" && (
+          <section className="max-w-6xl mx-auto px-5 pt-12 pb-10">
+            <div className="max-w-xl">
+              <h1 className="ff-display text-4xl sm:text-5xl leading-[1.08] text-[#F3ECDD]">
+                Straight from the field, priced for who's buying.
+              </h1>
+              <p className="mt-4 text-[15px] leading-relaxed text-[#C9C3AE] max-w-md">
+                Households pay a fair per-unit price. Registered businesses
+                buying in bulk get farmer-direct rates on premium produce — no
+                middlemen, just a valid GSTIN and a minimum order size.
+              </p>
+            </div>
 
-          {isBusiness && (
-            <div className="mt-8 max-w-md border border-[#33301F] bg-[#1D1C14] p-4">
-              <label className="block text-sm text-[#C9C3AE] mb-2">
-                GSTIN{" "}
-                <span className="text-[#C9A227]">
-                  — required for business pricing
-                </span>
-              </label>
-              <div className="flex gap-2">
-                <input
-                  value={gstin}
-                  onChange={(e) => setGstin(e.target.value.toUpperCase())}
-                  onBlur={() => setGstinTouched(true)}
-                  placeholder="22AAAAA0000A1Z5"
-                  maxLength={15}
-                  className="flex-1 border border-[#4A4630] bg-[#14140F] text-[#F3ECDD] px-3 py-2 text-sm tracking-wide outline-none focus:border-[#C9A227]"
-                />
-                {gstinOk ? (
-                  <span className="flex items-center gap-1 text-sm text-[#C9A227] px-2">
-                    <CheckCircle2 className="w-4 h-4" /> Verified
+            {isBusiness && (
+              <div className="mt-8 max-w-md border border-[#33301F] bg-[#1D1C14] p-4">
+                <label className="block text-sm text-[#C9C3AE] mb-2">
+                  GSTIN{" "}
+                  <span className="text-[#C9A227]">
+                    — required for business pricing
                   </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-sm text-[#8A8468] px-2">
-                    <Lock className="w-4 h-4" /> Locked
-                  </span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    value={gstin}
+                    onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                    onBlur={() => setGstinTouched(true)}
+                    placeholder="22AAAAA0000A1Z5"
+                    maxLength={15}
+                    className="flex-1 border border-[#4A4630] bg-[#14140F] text-[#F3ECDD] px-3 py-2 text-sm tracking-wide outline-none focus:border-[#C9A227]"
+                  />
+                  {gstinOk ? (
+                    <span className="flex items-center gap-1 text-sm text-[#C9A227] px-2">
+                      <CheckCircle2 className="w-4 h-4" /> Verified
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-sm text-[#8A8468] px-2">
+                      <Lock className="w-4 h-4" /> Locked
+                    </span>
+                  )}
+                </div>
+                {gstinTouched && !gstinOk && gstin.length > 0 && (
+                  <p className="mt-2 text-xs text-[#C4544A]">
+                    That doesn't look like a valid 15-character GSTIN yet.
+                  </p>
                 )}
               </div>
-              {gstinTouched && !gstinOk && gstin.length > 0 && (
-                <p className="mt-2 text-xs text-[#C4544A]">
-                  That doesn't look like a valid 15-character GSTIN yet.
-                </p>
-              )}
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        )}
       </div>
 
       {/* ---------------------------------------------------------------- */}
       {/* Filter bar                                                       */}
       {/* ---------------------------------------------------------------- */}
-      <section className="max-w-6xl mx-auto px-5 sticky top-0 z-10 bg-[#F3ECDD]/95 backdrop-blur border-y border-[#E4D6A7] py-3 flex flex-wrap items-center gap-2">
-        {categories.map((c) => {
-          const active = category === c;
-          return (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              aria-pressed={active}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
-                active
-                  ? "bg-[#1B3A2B] border-[#1B3A2B] text-[#F3ECDD] shadow-[inset_0_0_0_1px_#C9A227]"
-                  : "bg-transparent border-[#D8CBA1] text-[#5C5842] hover:border-[#1B3A2B] hover:text-[#1B3A2B]"
-              }`}
-            >
-              {active && (
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" />
-              )}
-              {c}
-            </button>
-          );
-        })}
+      {view === "shop" && (
+        <section className="max-w-6xl mx-auto px-5 sticky top-0 z-10 bg-[#F3ECDD]/95 backdrop-blur border-y border-[#E4D6A7] py-3 flex flex-wrap items-center gap-2">
+          {categories.map((c) => {
+            const active = category === c;
+            return (
+              <button
+                key={c}
+                onClick={() => setCategory(c)}
+                aria-pressed={active}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
+                  active
+                    ? "bg-[#1B3A2B] border-[#1B3A2B] text-[#F3ECDD] shadow-[inset_0_0_0_1px_#C9A227]"
+                    : "bg-transparent border-[#D8CBA1] text-[#5C5842] hover:border-[#1B3A2B] hover:text-[#1B3A2B]"
+                }`}
+              >
+                {active && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" />
+                )}
+                {c}
+              </button>
+            );
+          })}
 
-        {isBusiness && (
-          <button
-            onClick={() => setMaxSaverOnly((v) => !v)}
-            disabled={!bizUnlocked}
-            aria-pressed={maxSaverOnly}
-            title={
-              !bizUnlocked ? "Verify your GSTIN to use Max Saver" : undefined
-            }
-            className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
-              maxSaverOnly
-                ? "bg-[#C9A227] border-[#C9A227] text-[#14140F] shadow-[inset_0_0_0_1px_#14140F]"
-                : "bg-transparent border-[#C9A227] text-[#8A6D1E]"
-            } ${!bizUnlocked ? "opacity-40 cursor-not-allowed" : "hover:bg-[#C9A227]/15"}`}
-          >
-            <BadgePercent className="w-4 h-4" />
-            Max Saver deals only
-          </button>
-        )}
-      </section>
+          {isBusiness && (
+            <button
+              onClick={() => setMaxSaverOnly((v) => !v)}
+              disabled={!bizUnlocked}
+              aria-pressed={maxSaverOnly}
+              title={
+                !bizUnlocked ? "Verify your GSTIN to use Max Saver" : undefined
+              }
+              className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
+                maxSaverOnly
+                  ? "bg-[#C9A227] border-[#C9A227] text-[#14140F] shadow-[inset_0_0_0_1px_#14140F]"
+                  : "bg-transparent border-[#C9A227] text-[#8A6D1E]"
+              } ${!bizUnlocked ? "opacity-40 cursor-not-allowed" : "hover:bg-[#C9A227]/15"}`}
+            >
+              <BadgePercent className="w-4 h-4" />
+              Max Saver deals only
+            </button>
+          )}
+        </section>
+      )}
 
       {/* ---------------------------------------------------------------- */}
       {/* Product grid                                                     */}
       {/* ---------------------------------------------------------------- */}
-      <main className="max-w-6xl mx-auto px-5 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {visibleProducts.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              isBusiness={isBusiness}
-              bizUnlocked={bizUnlocked}
-              qtyInCart={cart[p.id] || 0}
-              onAdd={() => addToCart(p)}
-              onSetQty={(q) => setQty(p, q)}
-            />
-          ))}
-          {visibleProducts.length === 0 && (
-            <p className="col-span-full text-sm text-[#5C5842] py-10 text-center">
-              No products match this filter yet.
-            </p>
-          )}
-        </div>
-      </main>
-
-      {/* ---------------------------------------------------------------- */}
-      {/* Cart drawer                                                      */}
-      {/* ---------------------------------------------------------------- */}
-      {cartOpen && (
-        <div className="fixed inset-0 z-40 flex justify-end">
-          <div
-            onClick={() => setCartOpen(false)}
-            className="absolute inset-0 bg-[#14140F]/60"
-          />
-          <aside className="relative z-50 h-full w-full max-w-sm bg-[#FBF7EC] border-l border-[#E4D6A7] p-5 overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-4.5 h-4.5 text-[#1B3A2B]" />
-                <h2 className="ff-display text-lg">Your order</h2>
-              </div>
-              <button
-                onClick={() => setCartOpen(false)}
-                className="w-7 h-7 flex items-center justify-center border border-[#D8CBA1] hover:border-[#1B3A2B]"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {cartLines.length === 0 ? (
-              <p className="text-sm text-[#5C5842]">
-                Nothing added yet — close this and browse the catalogue.
+      {view === "shop" && (
+        <main className="max-w-6xl mx-auto px-5 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {visibleProducts.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                isBusiness={isBusiness}
+                bizUnlocked={bizUnlocked}
+                qtyInCart={cart[p.id] || 0}
+                onAdd={() => addToCart(p)}
+                onSetQty={(q) => setQty(p, q)}
+                onOpen={() => openProduct(p)}
+              />
+            ))}
+            {visibleProducts.length === 0 && (
+              <p className="col-span-full text-sm text-[#5C5842] py-10 text-center">
+                No products match this filter yet.
               </p>
-            ) : (
-              <div className="space-y-3">
-                {cartLines.map(({ product, qty }) => (
-                  <div
-                    key={product.id}
-                    className="flex items-start gap-2 text-sm border-b border-[#EDE4C8] pb-3"
-                  >
-                    <ProductPhoto
-                      product={product}
-                      className="w-10 h-10 object-cover flex-shrink-0 mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <p className="leading-tight">{product.name}</p>
-                      <p className="text-xs text-[#5C5842] tabular">
-                        {qty} {product.unit} × {money(priceFor(product))}
-                      </p>
-                      {isBusiness && (
-                        <p className="text-[11px] text-[#8A6D1E] mt-0.5">
-                          Min order {product.minBulkQty} {product.unit}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() =>
-                          setQty(product, qty - (isBusiness ? 5 : 1))
-                        }
-                        className="w-6 h-6 flex items-center justify-center border border-[#D8CBA1] hover:border-[#1B3A2B] active:bg-[#1B3A2B] active:text-[#F3ECDD]"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          setQty(product, qty + (isBusiness ? 5 : 1))
-                        }
-                        className="w-6 h-6 flex items-center justify-center border border-[#D8CBA1] hover:border-[#1B3A2B] active:bg-[#1B3A2B] active:text-[#F3ECDD]"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => removeFromCart(product.id)}
-                        className="w-6 h-6 flex items-center justify-center text-[#8C2E33] hover:text-[#6B1E2B]"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                <div className="pt-2 text-sm space-y-1">
-                  <div className="flex justify-between tabular">
-                    <span className="text-[#5C5842]">Subtotal</span>
-                    <span>{money(subtotal)}</span>
-                  </div>
-                  {bizUnlocked && savings > 0 && (
-                    <div className="flex justify-between tabular text-[#1B3A2B]">
-                      <span>Business savings</span>
-                      <span>− {money(savings)}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1.5 text-xs text-[#5C5842] pt-2">
-                    <Truck className="w-3.5 h-3.5" />
-                    {isBusiness
-                      ? "Freight quoted at checkout for bulk orders"
-                      : "Delivered within 2 days"}
-                  </div>
-                </div>
-
-                <button className="w-full mt-3 py-2.5 bg-[#1B3A2B] text-[#F3ECDD] text-sm hover:bg-[#14140F] active:bg-[#0E1F17] transition-colors">
-                  Proceed to checkout
-                </button>
-              </div>
             )}
-          </aside>
-        </div>
+          </div>
+        </main>
+      )}
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Cart page                                                        */}
+      {/* ---------------------------------------------------------------- */}
+      {view === "cart" && (
+        <CartPage
+          cartLines={cartLines}
+          isBusiness={isBusiness}
+          bizUnlocked={bizUnlocked}
+          priceFor={priceFor}
+          subtotal={subtotal}
+          savings={savings}
+          bizUnlockedSavings={bizUnlocked && savings > 0}
+          setQty={setQty}
+          removeFromCart={removeFromCart}
+          onBack={() => setView("shop")}
+        />
+      )}
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Product detail page                                              */}
+      {/* ---------------------------------------------------------------- */}
+      {view === "product" && selectedProduct && (
+        <ProductDetailPage
+          product={selectedProduct}
+          allProducts={allProducts}
+          cart={cart}
+          isBusiness={isBusiness}
+          bizUnlocked={bizUnlocked}
+          onAddToCart={addToCart}
+          onSetQty={setQty}
+          onBack={() => setView("shop")}
+          onOpenProduct={openProduct}
+        />
       )}
 
       {toast && (
@@ -1672,16 +1789,343 @@ function ProductPhoto({ product, className }) {
   );
 }
 
-function CartButton({ count, onClick }) {
+function CartPage({
+  cartLines,
+  isBusiness,
+  bizUnlocked,
+  priceFor,
+  subtotal,
+  savings,
+  bizUnlockedSavings,
+  setQty,
+  removeFromCart,
+  onBack,
+}) {
+  return (
+    <main className="max-w-3xl mx-auto px-5 py-10">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-sm text-[#5C5842] hover:text-[#1B3A2B] transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" /> Continue shopping
+      </button>
+
+      <div className="flex items-center gap-2 mt-6 mb-6">
+        <ShoppingCart className="w-5 h-5 text-[#1B3A2B]" />
+        <h1 className="ff-display text-3xl">Your order</h1>
+      </div>
+
+      {cartLines.length === 0 ? (
+        <div className="border border-[#E4D6A7] bg-[#FBF7EC] px-6 py-16 text-center">
+          <p className="text-sm text-[#5C5842]">
+            Nothing added yet — head back to the catalogue to start an order.
+          </p>
+          <button
+            onClick={onBack}
+            className="mt-4 px-4 py-2 text-sm border border-[#1B3A2B] text-[#1B3A2B] hover:bg-[#1B3A2B] hover:text-[#F3ECDD] transition-colors"
+          >
+            Browse products
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2 space-y-4">
+            {cartLines.map(({ product, qty }) => (
+              <div
+                key={product.id}
+                className="flex items-start gap-3 text-sm border border-[#E4D6A7] bg-[#FBF7EC] p-3"
+              >
+                <ProductPhoto
+                  product={product}
+                  className="w-16 h-16 object-cover shrink-0"
+                />
+                <div className="flex-1">
+                  <p className="ff-display text-base leading-tight">
+                    {product.name}
+                  </p>
+                  <p className="text-xs text-[#5C5842] mt-1">
+                    {product.farmer}
+                  </p>
+                  <p className="text-xs text-[#5C5842] tabular mt-1">
+                    {qty} {product.unit} × {money(priceFor(product))}
+                  </p>
+                  {isBusiness && (
+                    <p className="text-[11px] text-[#8A6D1E] mt-0.5">
+                      Min order {product.minBulkQty} {product.unit}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setQty(product, qty - (isBusiness ? 5 : 1))}
+                    className="w-7 h-7 flex items-center justify-center border border-[#D8CBA1] hover:border-[#1B3A2B] active:bg-[#1B3A2B] active:text-[#F3ECDD]"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setQty(product, qty + (isBusiness ? 5 : 1))}
+                    className="w-7 h-7 flex items-center justify-center border border-[#D8CBA1] hover:border-[#1B3A2B] active:bg-[#1B3A2B] active:text-[#F3ECDD]"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => removeFromCart(product.id)}
+                    className="w-7 h-7 flex items-center justify-center text-[#8C2E33] hover:text-[#6B1E2B]"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="border border-[#E4D6A7] bg-[#FBF7EC] p-4 h-fit">
+            <h2 className="ff-display text-lg mb-3">Summary</h2>
+            <div className="text-sm space-y-1">
+              <div className="flex justify-between tabular">
+                <span className="text-[#5C5842]">Subtotal</span>
+                <span>{money(subtotal)}</span>
+              </div>
+              {bizUnlockedSavings && (
+                <div className="flex justify-between tabular text-[#1B3A2B]">
+                  <span>Business savings</span>
+                  <span>− {money(savings)}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 text-xs text-[#5C5842] pt-2">
+                <Truck className="w-3.5 h-3.5" />
+                {isBusiness
+                  ? "Freight quoted at checkout for bulk orders"
+                  : "Delivered within 2 days"}
+              </div>
+            </div>
+
+            <button className="w-full mt-4 py-2.5 bg-[#1B3A2B] text-[#F3ECDD] text-sm hover:bg-[#14140F] active:bg-[#0E1F17] transition-colors">
+              Proceed to checkout
+            </button>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function ProductDetailPage({
+  product,
+  allProducts,
+  cart,
+  isBusiness,
+  bizUnlocked,
+  onAddToCart,
+  onSetQty,
+  onBack,
+  onOpenProduct,
+}) {
+  const qtyInCart = cart[product.id] || 0;
+  const description = useMemo(() => generateDescription(product), [product]);
+  const reviews = useMemo(() => generateReviews(product), [product]);
+  const rating = useMemo(() => avgRating(reviews), [reviews]);
+
+  const similar = useMemo(
+    () =>
+      allProducts
+        .filter((p) => p.id !== product.id && p.category === product.category)
+        .slice(0, 4),
+    [allProducts, product],
+  );
+
+  const disc = discountPct(product);
+  const showMaxSaver = isBusiness && disc >= MAX_SAVER_THRESHOLD;
+  const displayPrice = isBusiness
+    ? bizUnlocked
+      ? product.bizPrice
+      : product.indivPrice
+    : product.indivPrice;
+
+  return (
+    <main className="max-w-6xl mx-auto px-5 py-10">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-sm text-[#5C5842] hover:text-[#1B3A2B] transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to catalogue
+      </button>
+
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-10">
+        {/* Photo */}
+        <div className="relative">
+          {showMaxSaver && (
+            <span className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-[#C9A227] text-[#14140F] text-[11px] px-2 py-0.5">
+              <BadgePercent className="w-3 h-3" /> Max Saver
+            </span>
+          )}
+          {product.farmerAdded && (
+            <span className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-[#1B3A2B] text-[#F3ECDD] text-[11px] px-2 py-0.5">
+              <Sprout className="w-3 h-3" /> New listing
+            </span>
+          )}
+          <ProductPhoto
+            product={product}
+            className="w-full h-72 sm:h-96 object-cover border border-[#E4D6A7]"
+          />
+        </div>
+
+        {/* Details */}
+        <div>
+          <h1 className="ff-display text-3xl sm:text-4xl leading-tight">
+            {product.name}
+          </h1>
+          <div className="flex items-center gap-2 mt-2 text-sm text-[#5C5842]">
+            <MapPin className="w-3.5 h-3.5" />
+            {product.farmer}
+          </div>
+
+          {reviews.length > 0 && (
+            <div className="flex items-center gap-2 mt-3">
+              <StarRow rating={rating} />
+              <span className="text-sm text-[#5C5842] tabular">
+                {rating.toFixed(1)} · {reviews.length} review
+                {reviews.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+
+          <div className="mt-5 flex items-baseline gap-1.5">
+            <span className="ff-display text-3xl tabular text-[#1B3A2B]">
+              {money(displayPrice)}
+            </span>
+            <span className="text-sm text-[#5C5842]">/ {product.unit}</span>
+            {isBusiness && bizUnlocked && (
+              <span className="text-sm text-[#8A6D1E] line-through tabular ml-1">
+                {money(product.indivPrice)}
+              </span>
+            )}
+          </div>
+
+          {isBusiness ? (
+            <p className="text-xs text-[#8A6D1E] mt-1">
+              {bizUnlocked
+                ? `Bulk only — min ${product.minBulkQty} ${product.unit}`
+                : "Verify GSTIN to see business rate"}
+            </p>
+          ) : (
+            <p className="text-xs text-[#8A6D1E] mt-1">
+              Business rate: {money(product.bizPrice)}/{product.unit} — min{" "}
+              {product.minBulkQty} {product.unit}
+            </p>
+          )}
+
+          <p className="text-sm text-[#5C5842] leading-relaxed mt-5">
+            {description}
+          </p>
+
+          <div className="mt-6 max-w-xs">
+            {qtyInCart > 0 ? (
+              <div className="flex items-center justify-between border border-[#D8CBA1] px-2 py-1.5">
+                <button
+                  onClick={() =>
+                    onSetQty(product, qtyInCart - (isBusiness ? 5 : 1))
+                  }
+                  className="w-7 h-7 flex items-center justify-center active:bg-[#1B3A2B] active:text-[#F3ECDD]"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-sm tabular">
+                  {qtyInCart} {product.unit}
+                </span>
+                <button
+                  onClick={() =>
+                    onSetQty(product, qtyInCart + (isBusiness ? 5 : 1))
+                  }
+                  className="w-7 h-7 flex items-center justify-center active:bg-[#1B3A2B] active:text-[#F3ECDD]"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => onAddToCart(product)}
+                className="w-full py-2.5 text-sm border border-[#1B3A2B] text-[#1B3A2B] hover:bg-[#1B3A2B] hover:text-[#F3ECDD] active:bg-[#0E1F17] active:border-[#0E1F17] transition-colors"
+              >
+                {isBusiness ? "Add bulk order" : "Add to cart"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Reviews */}
+      <section className="mt-14 max-w-3xl">
+        <div className="flex items-center gap-2 mb-5">
+          <MessageSquare className="w-4 h-4 text-[#1B3A2B]" />
+          <h2 className="ff-display text-2xl">Reviews</h2>
+        </div>
+        {reviews.length === 0 ? (
+          <p className="text-sm text-[#5C5842]">No reviews yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((r) => (
+              <div
+                key={r.id}
+                className="border border-[#E4D6A7] bg-[#FBF7EC] p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{r.name}</span>
+                  <span className="text-xs text-[#8A8468]">
+                    {timeAgo(r.daysAgo)}
+                  </span>
+                </div>
+                <div className="mt-1.5">
+                  <StarRow rating={r.rating} />
+                </div>
+                <p className="text-sm text-[#5C5842] leading-relaxed mt-2">
+                  {r.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Similar products */}
+      {similar.length > 0 && (
+        <section className="mt-14">
+          <h2 className="ff-display text-2xl mb-5">You may also like</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {similar.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                isBusiness={isBusiness}
+                bizUnlocked={bizUnlocked}
+                qtyInCart={cart[p.id] || 0}
+                onAdd={() => onAddToCart(p)}
+                onSetQty={(q) => onSetQty(p, q)}
+                onOpen={() => onOpenProduct(p)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+    </main>
+  );
+}
+
+function CartButton({ count, onClick, active }) {
   return (
     <button
       onClick={onClick}
-      className="relative flex items-center gap-2 px-4 py-2 text-sm border border-[#C9A227] text-[#F3ECDD] hover:bg-[#C9A227] hover:text-[#14140F] transition-colors"
+      aria-pressed={active}
+      className={`relative flex items-center gap-2 px-4 py-2 text-sm border border-[#C9A227] transition-colors ${
+        active
+          ? "bg-[#C9A227] text-[#14140F]"
+          : "text-[#F3ECDD] hover:bg-[#C9A227] hover:text-[#14140F]"
+      }`}
     >
       <ShoppingCart className="w-4 h-4" />
       Cart
       {count > 0 && (
-        <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[#C9A227] text-[#14140F] text-[10px] font-semibold">
+        <span className="absolute -top-2 -right-2 min-w-4.5 h-4.5 px-1 flex items-center justify-center rounded-full bg-[#C9A227] text-[#14140F] text-[10px] font-semibold">
           {count}
         </span>
       )}
@@ -1727,6 +2171,7 @@ function ProductCard({
   qtyInCart,
   onAdd,
   onSetQty,
+  onOpen,
 }) {
   const disc = discountPct(product);
   const showMaxSaver = isBusiness && disc >= MAX_SAVER_THRESHOLD;
@@ -1736,8 +2181,23 @@ function ProductCard({
       : product.indivPrice
     : product.indivPrice;
 
+  function handleCardKeyDown(e) {
+    if (onOpen && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      onOpen();
+    }
+  }
+
   return (
-    <div className="border border-[#E4D6A7] bg-[#FBF7EC] flex flex-col relative overflow-hidden">
+    <div
+      onClick={onOpen}
+      onKeyDown={handleCardKeyDown}
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      className={`border border-[#E4D6A7] bg-[#FBF7EC] flex flex-col relative overflow-hidden ${
+        onOpen ? "cursor-pointer hover:border-[#1B3A2B] transition-colors" : ""
+      }`}
+    >
       {showMaxSaver && (
         <span className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-[#C9A227] text-[#14140F] text-[11px] px-2 py-0.5">
           <BadgePercent className="w-3 h-3" /> Max Saver
@@ -1781,7 +2241,10 @@ function ProductCard({
 
         <div className="mt-auto pt-4">
           {qtyInCart > 0 ? (
-            <div className="flex items-center justify-between border border-[#D8CBA1] px-2 py-1.5">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center justify-between border border-[#D8CBA1] px-2 py-1.5"
+            >
               <button
                 onClick={() => onSetQty(qtyInCart - (isBusiness ? 5 : 1))}
                 className="w-6 h-6 flex items-center justify-center active:bg-[#1B3A2B] active:text-[#F3ECDD]"
@@ -1800,7 +2263,10 @@ function ProductCard({
             </div>
           ) : (
             <button
-              onClick={onAdd}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdd();
+              }}
               className="w-full py-2 text-sm border border-[#1B3A2B] text-[#1B3A2B] hover:bg-[#1B3A2B] hover:text-[#F3ECDD] active:bg-[#0E1F17] active:border-[#0E1F17] transition-colors"
             >
               {isBusiness ? "Add bulk order" : "Add to cart"}
