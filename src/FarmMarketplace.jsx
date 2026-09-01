@@ -21,6 +21,7 @@ import {
   Star,
   MessageSquare,
   MapPin,
+  Search,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -1427,6 +1428,7 @@ function ConsumerMarketplace({ allProducts, onSwitch }) {
   const [gstin, setGstin] = usePersistentState("ks_gstin", "");
   const [gstinTouched, setGstinTouched] = useState(false);
   const [category, setCategory] = usePersistentState("ks_category", "All");
+  const [search, setSearch] = useState("");
   const [maxSaverOnly, setMaxSaverOnly] = usePersistentState(
     "ks_maxSaverOnly",
     false,
@@ -1445,13 +1447,69 @@ function ConsumerMarketplace({ allProducts, onSwitch }) {
     [allProducts],
   );
 
+  const searchQuery = search.trim().toLowerCase();
+
+  function matchesQuery(p, q) {
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.farmer.toLowerCase().includes(q)
+    );
+  }
+
+  // Direct matches for the current search text, ignoring category/Max Saver
+  // filters — used to decide whether we need to fall back to "related"
+  // suggestions when nothing matches exactly.
+  const directSearchMatches = useMemo(() => {
+    if (!searchQuery) return null;
+    return allProducts.filter((p) => matchesQuery(p, searchQuery));
+  }, [allProducts, searchQuery]);
+
+  // When the search text has no direct hits, suggest related products by
+  // matching individual words against name/category/farmer, and otherwise
+  // fall back to the closest category words in the search text.
+  const relatedSearchMatches = useMemo(() => {
+    if (!searchQuery || (directSearchMatches && directSearchMatches.length))
+      return [];
+    const words = searchQuery.split(/\s+/).filter((w) => w.length > 2);
+    if (words.length === 0) return [];
+    const scored = allProducts
+      .map((p) => {
+        const haystack = `${p.name} ${p.category} ${p.farmer}`.toLowerCase();
+        const score = words.reduce(
+          (s, w) => s + (haystack.includes(w) ? 1 : 0),
+          0,
+        );
+        return { p, score };
+      })
+      .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score);
+    return scored.slice(0, 8).map((s) => s.p);
+  }, [allProducts, searchQuery, directSearchMatches]);
+
+  const isRelatedFallback =
+    !!searchQuery && (!directSearchMatches || directSearchMatches.length === 0);
+
   const visibleProducts = useMemo(() => {
     let list = allProducts;
     if (category !== "All") list = list.filter((p) => p.category === category);
     if (isBusiness && maxSaverOnly)
       list = list.filter((p) => discountPct(p) >= MAX_SAVER_THRESHOLD);
+    if (searchQuery) {
+      list = isRelatedFallback
+        ? list.filter((p) => relatedSearchMatches.some((r) => r.id === p.id))
+        : list.filter((p) => matchesQuery(p, searchQuery));
+    }
     return list;
-  }, [allProducts, category, isBusiness, maxSaverOnly]);
+  }, [
+    allProducts,
+    category,
+    isBusiness,
+    maxSaverOnly,
+    searchQuery,
+    isRelatedFallback,
+    relatedSearchMatches,
+  ]);
 
   function flashToast(msg) {
     setToast(msg);
@@ -1643,47 +1701,73 @@ function ConsumerMarketplace({ allProducts, onSwitch }) {
       {/* Filter bar                                                       */}
       {/* ---------------------------------------------------------------- */}
       {view === "shop" && (
-        <section className="max-w-6xl mx-auto px-5 sticky top-0 z-10 bg-[#F3ECDD]/95 backdrop-blur border-y border-[#E4D6A7] py-3 flex flex-wrap items-center gap-2">
-          {categories.map((c) => {
-            const active = category === c;
-            return (
-              <button
-                key={c}
-                onClick={() => setCategory(c)}
-                aria-pressed={active}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
-                  active
-                    ? "bg-[#1B3A2B] border-[#1B3A2B] text-[#F3ECDD] shadow-[inset_0_0_0_1px_#C9A227]"
-                    : "bg-transparent border-[#D8CBA1] text-[#5C5842] hover:border-[#1B3A2B] hover:text-[#1B3A2B]"
-                }`}
-              >
-                {active && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" />
-                )}
-                {c}
-              </button>
-            );
-          })}
+        <div className="sticky top-0 z-10 bg-[#F3ECDD]/95 backdrop-blur border-y border-[#E4D6A7]">
+          <section className="max-w-6xl mx-auto px-5 pt-3">
+            <div className="relative">
+              <Search className="w-4 h-4 text-[#8A8468] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                type="search"
+                placeholder="Search products, categories or farmers…"
+                className="w-full border border-[#D8CBA1] bg-white pl-9 pr-9 py-2 text-sm outline-none focus:border-[#1B3A2B] placeholder:text-[#8A8468]"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8A8468] hover:text-[#1B3A2B]"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </section>
 
-          {isBusiness && (
-            <button
-              onClick={() => setMaxSaverOnly((v) => !v)}
-              disabled={!bizUnlocked}
-              aria-pressed={maxSaverOnly}
-              title={
-                !bizUnlocked ? "Verify your GSTIN to use Max Saver" : undefined
-              }
-              className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
-                maxSaverOnly
-                  ? "bg-[#C9A227] border-[#C9A227] text-[#14140F] shadow-[inset_0_0_0_1px_#14140F]"
-                  : "bg-transparent border-[#C9A227] text-[#8A6D1E]"
-              } ${!bizUnlocked ? "opacity-40 cursor-not-allowed" : "hover:bg-[#C9A227]/15"}`}
-            >
-              <BadgePercent className="w-4 h-4" />
-              Max Saver deals only
-            </button>
-          )}
-        </section>
+          <section className="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center gap-2">
+            {categories.map((c) => {
+              const active = category === c;
+              return (
+                <button
+                  key={c}
+                  onClick={() => setCategory(c)}
+                  aria-pressed={active}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
+                    active
+                      ? "bg-[#1B3A2B] border-[#1B3A2B] text-[#F3ECDD] shadow-[inset_0_0_0_1px_#C9A227]"
+                      : "bg-transparent border-[#D8CBA1] text-[#5C5842] hover:border-[#1B3A2B] hover:text-[#1B3A2B]"
+                  }`}
+                >
+                  {active && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" />
+                  )}
+                  {c}
+                </button>
+              );
+            })}
+
+            {isBusiness && (
+              <button
+                onClick={() => setMaxSaverOnly((v) => !v)}
+                disabled={!bizUnlocked}
+                aria-pressed={maxSaverOnly}
+                title={
+                  !bizUnlocked
+                    ? "Verify your GSTIN to use Max Saver"
+                    : undefined
+                }
+                className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
+                  maxSaverOnly
+                    ? "bg-[#C9A227] border-[#C9A227] text-[#14140F] shadow-[inset_0_0_0_1px_#14140F]"
+                    : "bg-transparent border-[#C9A227] text-[#8A6D1E]"
+                } ${!bizUnlocked ? "opacity-40 cursor-not-allowed" : "hover:bg-[#C9A227]/15"}`}
+              >
+                <BadgePercent className="w-4 h-4" />
+                Max Saver deals only
+              </button>
+            )}
+          </section>
+        </div>
       )}
 
       {/* ---------------------------------------------------------------- */}
@@ -1691,6 +1775,26 @@ function ConsumerMarketplace({ allProducts, onSwitch }) {
       {/* ---------------------------------------------------------------- */}
       {view === "shop" && (
         <main className="max-w-6xl mx-auto px-5 py-8">
+          {searchQuery && (
+            <p className="text-sm text-[#5C5842] mb-4">
+              {isRelatedFallback ? (
+                visibleProducts.length > 0 ? (
+                  <>
+                    No exact matches for "{search}" — showing{" "}
+                    <span className="text-[#1B3A2B]">related products</span>{" "}
+                    instead.
+                  </>
+                ) : (
+                  <>No products found for "{search}".</>
+                )
+              ) : (
+                <>
+                  {visibleProducts.length} result
+                  {visibleProducts.length !== 1 ? "s" : ""} for "{search}"
+                </>
+              )}
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {visibleProducts.map((p) => (
               <ProductCard
