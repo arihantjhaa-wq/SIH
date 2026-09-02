@@ -771,8 +771,8 @@ const money = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 // CORS issues, unlike keyword-matched services which can go down or throttle.
 function photoUrl(product, w = 480, h = 360) {
   const seed = encodeURIComponent(product.photo || product.id);
-  return `https://picsum.photos/seed/${seed}/${w}/${h}`;
-}
+  return `https://picsum./seed/${seed}/${w}/${h}`;
+}photos
 
 // ---------------------------------------------------------------------------
 // Deterministic "fake backend" content for the product detail page —
