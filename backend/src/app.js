@@ -22,8 +22,8 @@ app.use("/api/v1/healthcheck", healthcheackRoutes)
 import  authRoutes from './routes/auth.rout.js'
 app.use("/api/v1/auth" , authRoutes);
 
-// import todoRoutes from './routes/todo.router.js'
-// app.use("/api/v1/task", todoRoutes);
+import productRoutes from './routes/product.rout.js'
+app.use("/api/v1/products" , productRoutes);
 
 // Global Error Handler
 import { ApiError } from './utils/api-error.js';
