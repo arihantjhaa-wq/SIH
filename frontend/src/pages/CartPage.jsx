@@ -15,7 +15,7 @@ export default function CartPage({
   removeFromCart,
   onBack,
 }) {
-  const [orderPlaced, setOrderPlaced] = useState(false);
+const [orderPlaced, setOrderPlaced] = useState(false);
 
   if (orderPlaced) {
     return (

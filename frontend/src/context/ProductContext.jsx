@@ -45,7 +45,7 @@ export function ProductProvider({ children }) {
 
   const removeProduct = useCallback(async (id) => {
     await deleteProduct(id);
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+    setProducts((prev) => prev.filter((p) => p._id !== id && p.id !== id));
   }, []);
 
   const value = {

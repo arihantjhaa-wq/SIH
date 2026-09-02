@@ -1,6 +1,19 @@
 import React, { useState, useMemo } from "react";
-import { Leaf, ArrowLeft, Lock, CircleCheck as CheckCircle2, BadgePercent, Search, X } from "lucide-react";
-import { discountPct, isGstinValid, money, MAX_SAVER_THRESHOLD } from "../utils/marketplace.js";
+import {
+  Leaf,
+  ArrowLeft,
+  Lock,
+  CircleCheck as CheckCircle2,
+  BadgePercent,
+  Search,
+  X,
+} from "lucide-react";
+import {
+  discountPct,
+  isGstinValid,
+  money,
+  MAX_SAVER_THRESHOLD,
+} from "../utils/marketplace.js";
 import { useProducts } from "../context/ProductContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { usePersistentState } from "../hooks/usePersistentState.js";
@@ -14,12 +27,18 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
   const { products: allProducts, loading, error } = useProducts();
   const { cart, addToCart, setQty: setCartQty, removeFromCart } = useCart();
 
-  const [consumerType, setConsumerType] = usePersistentState("ks_consumerType", "individual");
+  const [consumerType, setConsumerType] = usePersistentState(
+    "ks_consumerType",
+    "individual",
+  );
   const [gstin, setGstin] = usePersistentState("ks_gstin", "");
   const [gstinTouched, setGstinTouched] = useState(false);
   const [category, setCategory] = usePersistentState("ks_category", "All");
   const [search, setSearch] = useState("");
-  const [maxSaverOnly, setMaxSaverOnly] = usePersistentState("ks_maxSaverOnly", false);
+  const [maxSaverOnly, setMaxSaverOnly] = usePersistentState(
+    "ks_maxSaverOnly",
+    false,
+  );
   const [view, setView] = useState("shop");
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [toast, setToast] = useState(null);
@@ -56,7 +75,10 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
     const scored = allProducts
       .map((p) => {
         const haystack = `${p.name} ${p.category} ${p.farmer}`.toLowerCase();
-        const score = words.reduce((s, w) => s + (haystack.includes(w) ? 1 : 0), 0);
+        const score = words.reduce(
+          (s, w) => s + (haystack.includes(w) ? 1 : 0),
+          0,
+        );
         return { p, score };
       })
       .filter((s) => s.score > 0)
@@ -78,7 +100,15 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
         : list.filter((p) => matchesQuery(p, searchQuery));
     }
     return list;
-  }, [allProducts, category, isBusiness, maxSaverOnly, searchQuery, isRelatedFallback, relatedSearchMatches]);
+  }, [
+    allProducts,
+    category,
+    isBusiness,
+    maxSaverOnly,
+    searchQuery,
+    isRelatedFallback,
+    relatedSearchMatches,
+  ]);
 
   function flashToast(msg) {
     setToast(msg);
@@ -128,15 +158,23 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
     .filter((l) => l.product);
 
   const priceFor = (p) => (bizUnlocked ? p.bizPrice : p.indivPrice);
-  const subtotal = cartLines.reduce((sum, l) => sum + priceFor(l.product) * l.qty, 0);
+  const subtotal = cartLines.reduce(
+    (sum, l) => sum + priceFor(l.product) * l.qty,
+    0,
+  );
   const savings = bizUnlocked
-    ? cartLines.reduce((sum, l) => sum + (l.product.indivPrice - l.product.bizPrice) * l.qty, 0)
+    ? cartLines.reduce(
+        (sum, l) => sum + (l.product.indivPrice - l.product.bizPrice) * l.qty,
+        0,
+      )
     : 0;
 
   return (
     <div
       className="min-h-screen w-full bg-[#F3ECDD] text-[#2A2820]"
-      style={{ fontFamily: "'Work Sans', ui-sans-serif, system-ui, sans-serif" }}
+      style={{
+        fontFamily: "'Work Sans', ui-sans-serif, system-ui, sans-serif",
+      }}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap');
@@ -149,7 +187,9 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
           <div className="max-w-6xl mx-auto px-5 py-5 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Leaf className="w-6 h-6 text-[#C9A227]" strokeWidth={1.75} />
-              <span className="ff-display text-2xl tracking-tight">Kheti Seedha</span>
+              <span className="ff-display text-2xl tracking-tight">
+                Kheti Seedha
+              </span>
             </div>
             <div className="hidden sm:flex items-center gap-3">
               <button
@@ -166,7 +206,10 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                   Log out
                 </button>
               )}
-              <ConsumerToggle consumerType={consumerType} onChange={(t) => setConsumerType(t)} />
+              <ConsumerToggle
+                consumerType={consumerType}
+                onChange={(t) => setConsumerType(t)}
+              />
               <CartButton
                 count={cartLines.length}
                 active={view === "cart"}
@@ -190,7 +233,10 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
               </button>
             )}
             <div className="flex-1">
-              <ConsumerToggle consumerType={consumerType} onChange={(t) => setConsumerType(t)} />
+              <ConsumerToggle
+                consumerType={consumerType}
+                onChange={(t) => setConsumerType(t)}
+              />
             </div>
             <CartButton
               count={cartLines.length}
@@ -217,7 +263,9 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
               <div className="mt-8 max-w-md border border-[#33301F] bg-[#1D1C14] p-4">
                 <label className="block text-sm text-[#C9C3AE] mb-2">
                   GSTIN{" "}
-                  <span className="text-[#C9A227]">— required for business pricing</span>
+                  <span className="text-[#C9A227]">
+                    — required for business pricing
+                  </span>
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -287,7 +335,9 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                       : "bg-transparent border-[#D8CBA1] text-[#5C5842] hover:border-[#1B3A2B] hover:text-[#1B3A2B]"
                   }`}
                 >
-                  {active && <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" />}
+                  {active && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" />
+                  )}
                   {c}
                 </button>
               );
@@ -298,7 +348,11 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                 onClick={() => setMaxSaverOnly((v) => !v)}
                 disabled={!bizUnlocked}
                 aria-pressed={maxSaverOnly}
-                title={!bizUnlocked ? "Verify your GSTIN to use Max Saver" : undefined}
+                title={
+                  !bizUnlocked
+                    ? "Verify your GSTIN to use Max Saver"
+                    : undefined
+                }
                 className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
                   maxSaverOnly
                     ? "bg-[#C9A227] border-[#C9A227] text-[#14140F] shadow-[inset_0_0_0_1px_#14140F]"
@@ -316,7 +370,9 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
       {view === "shop" && (
         <main className="max-w-6xl mx-auto px-5 py-8">
           {loading && (
-            <p className="text-sm text-[#5C5842] py-10 text-center">Loading products…</p>
+            <p className="text-sm text-[#5C5842] py-10 text-center">
+              Loading products…
+            </p>
           )}
           {error && (
             <p className="text-sm text-[#C4544A] py-10 text-center">{error}</p>
@@ -327,14 +383,16 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                 visibleProducts.length > 0 ? (
                   <>
                     No exact matches for "{search}" — showing{" "}
-                    <span className="text-[#1B3A2B]">related products</span> instead.
+                    <span className="text-[#1B3A2B]">related products</span>{" "}
+                    instead.
                   </>
                 ) : (
                   <>No products found for "{search}".</>
                 )
               ) : (
                 <>
-                  {visibleProducts.length} result{visibleProducts.length !== 1 ? "s" : ""} for "{search}"
+                  {visibleProducts.length} result
+                  {visibleProducts.length !== 1 ? "s" : ""} for "{search}"
                 </>
               )}
             </p>

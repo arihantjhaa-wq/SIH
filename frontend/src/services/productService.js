@@ -2,7 +2,8 @@ import api from "./api.js";
 
 export async function getProducts() {
   const { data } = await api.get("/products");
-  return data.data;
+  // Map MongoDB _id to id for frontend compatibility
+  return data.data.map(p => ({ ...p, id: p._id }));
 }
 
 export async function createProduct(product) {
@@ -17,7 +18,8 @@ export async function createProduct(product) {
     minBulkQty: product.minBulkQty,
     farmer: product.farmer,
   });
-  return data.data;
+  // Map MongoDB _id to id for frontend compatibility
+  return { ...data.data, id: data.data._id };
 }
 
 export async function deleteProduct(id) {
