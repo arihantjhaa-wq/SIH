@@ -31,7 +31,7 @@ function Field({ label, error, children }) {
   );
 }
 
-export default function FarmerPortal({ onSwitch }) {
+export default function FarmerPortal({ onSwitch, onLogout }) {
   const { products, addProduct, removeProduct, loading } = useProducts();
   const farmerListings = products.filter((p) => p.farmerAdded);
 
@@ -173,12 +173,22 @@ export default function FarmerPortal({ onSwitch }) {
                 Farmer portal
               </span>
             </div>
-            <button
-              onClick={onSwitch}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#4A4630] text-[#C9C3AE] hover:border-[#C9A227] hover:text-[#C9A227] transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Switch role
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onSwitch}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#4A4630] text-[#C9C3AE] hover:border-[#C9A227] hover:text-[#C9A227] transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Switch role
+              </button>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="px-3 py-2 text-sm text-[#C9C3AE] hover:text-[#C9A227] transition-colors"
+                >
+                  Log out
+                </button>
+              )}
+            </div>
           </div>
         </header>
         <section className="max-w-6xl mx-auto px-5 pt-10 pb-8">

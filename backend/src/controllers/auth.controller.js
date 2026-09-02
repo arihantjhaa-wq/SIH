@@ -190,4 +190,10 @@ const verifyEmail = asyncHandler(async (req ,res) => {
 
 });
 
-export { registerUser , login , logout, verifyEmail};
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user: req.user }, "Current user fetched successfully"));
+});
+
+export { registerUser , login , logout, verifyEmail, getCurrentUser};

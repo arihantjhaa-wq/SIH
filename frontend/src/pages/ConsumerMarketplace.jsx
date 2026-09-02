@@ -10,7 +10,7 @@ import ProductCard from "../components/ProductCard.jsx";
 import CartPage from "./CartPage.jsx";
 import ProductDetailPage from "./ProductDetailPage.jsx";
 
-export default function ConsumerMarketplace({ onSwitch }) {
+export default function ConsumerMarketplace({ onSwitch, onLogout }) {
   const { products: allProducts, loading, error } = useProducts();
   const { cart, addToCart, setQty: setCartQty, removeFromCart } = useCart();
 
@@ -158,6 +158,14 @@ export default function ConsumerMarketplace({ onSwitch }) {
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Switch role
               </button>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="px-2 py-2 text-sm text-[#C9C3AE] hover:text-[#C9A227] transition-colors"
+                >
+                  Log out
+                </button>
+              )}
               <ConsumerToggle consumerType={consumerType} onChange={(t) => setConsumerType(t)} />
               <CartButton
                 count={cartLines.length}
@@ -173,6 +181,14 @@ export default function ConsumerMarketplace({ onSwitch }) {
             >
               <ArrowLeft className="w-3.5 h-3.5" />
             </button>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="px-2 py-2 text-xs text-[#C9C3AE] hover:text-[#C9A227]"
+              >
+                Log out
+              </button>
+            )}
             <div className="flex-1">
               <ConsumerToggle consumerType={consumerType} onChange={(t) => setConsumerType(t)} />
             </div>

@@ -1,7 +1,7 @@
 import React from "react";
 import { Leaf, Sprout, Store } from "lucide-react";
 
-export default function RoleGate({ onSelect }) {
+export default function RoleGate({ onSelect, onLogout }) {
   return (
     <div
       className="min-h-screen w-full bg-[#14140F] text-[#F3ECDD] flex items-center justify-center px-5"
@@ -28,6 +28,14 @@ export default function RoleGate({ onSelect }) {
           Farmers list what they've harvested. Households and businesses buy it
           direct — no middlemen.
         </p>
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="block mx-auto mt-4 text-xs text-[#8A8468] hover:text-[#C9A227] transition-colors"
+          >
+            Log out
+          </button>
+        )}
 
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-5">
           <button
