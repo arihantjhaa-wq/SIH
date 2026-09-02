@@ -2,6 +2,13 @@ import mailgen from 'mailgen'
 import nodemailer from "nodemailer";
 
 const sendEmail = async (options) => {
+  // If email config is not provided, log a warning and return early instead of throwing/failing
+  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USERNAME) {
+    console.warn(
+      "Email service skipped: EMAIL_HOST or EMAIL_USERNAME not configured in .env",
+    );
+    return;
+  }
 
   const mailGenerator = new mailgen({
     theme: "default",
