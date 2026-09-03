@@ -7,6 +7,8 @@ import {
   BadgePercent,
   Search,
   X,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import {
   discountPct,
@@ -17,6 +19,8 @@ import {
 import { useProducts } from "../context/ProductContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { usePersistentState } from "../hooks/usePersistentState.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { verifyGstinApi } from "../services/gstService.js";
 import CartButton from "../components/CartButton.jsx";
 import ConsumerToggle from "../components/ConsumerToggle.jsx";
 import ProductCard from "../components/ProductCard.jsx";
@@ -26,6 +30,7 @@ import ProductDetailPage from "./ProductDetailPage.jsx";
 export default function ConsumerMarketplace({ onSwitch, onLogout }) {
   const { products: allProducts, loading, error } = useProducts();
   const { cart, addToCart, setQty: setCartQty, removeFromCart } = useCart();
+  const { user } = useAuth();
 
   const [consumerType, setConsumerType] = usePersistentState(
     "ks_consumerType",
@@ -33,6 +38,9 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
   );
   const [gstin, setGstin] = usePersistentState("ks_gstin", "");
   const [gstinTouched, setGstinTouched] = useState(false);
+  const [gstVerificationStatus, setGstVerificationStatus] = useState(null);
+  const [gstVerificationData, setGstVerificationData] = useState(null);
+  const [gstVerifying, setGstVerifying] = useState(false);
   const [category, setCategory] = usePersistentState("ks_category", "All");
   const [search, setSearch] = useState("");
   const [maxSaverOnly, setMaxSaverOnly] = usePersistentState(
@@ -44,8 +52,10 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
   const [toast, setToast] = useState(null);
 
   const isBusiness = consumerType === "business";
-  const gstinOk = isGstinValid(gstin);
-  const bizUnlocked = isBusiness && gstinOk;
+  const isDeveloper = user?.isDeveloper || user?.username === "__developer__";
+
+  // Business is unlocked only when GST verification returns VERIFIED status
+  const bizUnlocked = isBusiness && gstVerificationStatus === "VERIFIED";
 
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(allProducts.map((p) => p.category)))],
@@ -114,6 +124,68 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
     setToast(msg);
     window.clearTimeout(flashToast._t);
     flashToast._t = window.setTimeout(() => setToast(null), 2200);
+  }
+
+  async function handleVerifyGstin() {
+    if (!gstin || gstin.length !== 15) {
+      setGstVerificationStatus("FORMAT_INVALID");
+      setGstVerificationData(null);
+      return;
+    }
+
+    setGstVerifying(true);
+    setGstVerificationStatus(null);
+    setGstVerificationData(null);
+
+    try {
+      const result = await verifyGstinApi({ gstin });
+      setGstVerificationStatus(result.status);
+      setGstVerificationData(result.data || null);
+
+      if (result.status === "VERIFIED") {
+        flashToast(
+          result.data?.isDemo
+            ? "Developer demo GSTIN verified"
+            : "GSTIN verified successfully"
+        );
+      }
+    } catch (err) {
+      setGstVerificationStatus("PROVIDER_UNAVAILABLE");
+      setGstVerificationData(null);
+      flashToast("Could not verify GSTIN. Please try again.");
+    } finally {
+      setGstVerifying(false);
+    }
+  }
+
+  async function handleUseDeveloperDemo() {
+    setGstin("07AAAAA0000A1Z5");
+    setGstVerifying(true);
+    setGstVerificationStatus(null);
+    setGstVerificationData(null);
+
+    try {
+      const result = await verifyGstinApi({
+        gstin: "07AAAAA0000A1Z5",
+        isDemoRequest: true,
+      });
+      setGstVerificationStatus(result.status);
+      setGstVerificationData(result.data || null);
+      flashToast("Developer demo GSTIN activated");
+    } catch (err) {
+      flashToast("Could not activate developer demo");
+    } finally {
+      setGstVerifying(false);
+    }
+  }
+
+  function handleGstinChange(value) {
+    setGstin(value.toUpperCase());
+    // Reset verification when GSTIN changes
+    if (gstVerificationStatus) {
+      setGstVerificationStatus(null);
+      setGstVerificationData(null);
+    }
   }
 
   function addToCartHandler(product) {
@@ -270,26 +342,113 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                 <div className="flex gap-2">
                   <input
                     value={gstin}
-                    onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                    onChange={(e) => handleGstinChange(e.target.value)}
                     onBlur={() => setGstinTouched(true)}
-                    placeholder="22AAAAA0000A1Z5"
+                    placeholder="27AAACW7823G1ZV"
                     maxLength={15}
                     className="flex-1 border border-[#4A4630] bg-[#14140F] text-[#F3ECDD] px-3 py-2 text-sm tracking-wide outline-none focus:border-[#C9A227]"
+                    disabled={gstVerifying}
                   />
-                  {gstinOk ? (
-                    <span className="flex items-center gap-1 text-sm text-[#C9A227] px-2">
-                      <CheckCircle2 className="w-4 h-4" /> Verified
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-sm text-[#8A8468] px-2">
-                      <Lock className="w-4 h-4" /> Locked
-                    </span>
-                  )}
+                  <button
+                    onClick={handleVerifyGstin}
+                    disabled={gstVerifying || !gstin || gstin.length !== 15}
+                    className="px-4 py-2 bg-[#C9A227] text-[#14140F] text-sm font-medium hover:bg-[#D4AE3D] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {gstVerifying ? "Verifying..." : "Verify"}
+                  </button>
                 </div>
-                {gstinTouched && !gstinOk && gstin.length > 0 && (
-                  <p className="mt-2 text-xs text-[#C4544A]">
-                    That doesn't look like a valid 15-character GSTIN yet.
-                  </p>
+
+                {/* Verification Status Messages */}
+                {gstVerifying && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-[#C9A227]">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Verifying with GST portal...
+                  </div>
+                )}
+
+                {gstVerificationStatus === "VERIFIED" && gstVerificationData && (
+                  <div className="mt-3 p-3 border border-[#4A8F5A] bg-[#1B3A2B]/20">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#6FC282] mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#6FC282] font-medium">
+                          GSTIN Verified
+                          {gstVerificationData.isDemo && (
+                            <span className="ml-2 text-xs text-[#C9A227]">(Developer Demo)</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-[#C9C3AE] mt-1">
+                          <strong>{gstVerificationData.legalName}</strong>
+                        </p>
+                        {gstVerificationData.tradeName && gstVerificationData.tradeName !== gstVerificationData.legalName && (
+                          <p className="text-xs text-[#8A8468] mt-0.5">
+                            Trading as: {gstVerificationData.tradeName}
+                          </p>
+                        )}
+                        <p className="text-xs text-[#8A8468] mt-0.5">
+                          Status: {gstVerificationData.gstinStatus} • {gstVerificationData.taxpayerType}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {gstVerificationStatus === "NOT_VERIFIED" && (
+                  <div className="mt-2 flex items-start gap-2 p-2 border border-[#C4544A]/40 bg-[#C4544A]/10">
+                    <AlertCircle className="w-4 h-4 text-[#C4544A] mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-[#C4544A]">
+                      GSTIN not found or inactive with tax authority.
+                    </p>
+                  </div>
+                )}
+
+                {gstVerificationStatus === "FORMAT_INVALID" && (
+                  <div className="mt-2 flex items-start gap-2 p-2 border border-[#C4544A]/40 bg-[#C4544A]/10">
+                    <AlertCircle className="w-4 h-4 text-[#C4544A] mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-[#C4544A]">
+                      Invalid GSTIN format. Must be 15 alphanumeric characters (e.g. 27AAACW7823G1ZV).
+                    </p>
+                  </div>
+                )}
+
+                {gstVerificationStatus === "PROVIDER_UNAVAILABLE" && (
+                  <div className="mt-2 p-2 border border-[#C9A227]/40 bg-[#C9A227]/10">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-[#C9A227] mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs text-[#C9A227]">
+                          GST verification service is temporarily unavailable.
+                        </p>
+                        <button
+                          onClick={handleVerifyGstin}
+                          className="mt-1 text-xs text-[#C9A227] underline hover:text-[#D4AE3D]"
+                        >
+                          Retry verification
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {gstVerificationStatus === "VERIFICATION_DISABLED" && (
+                  <div className="mt-2 p-2 border border-[#8A8468]/40 bg-[#8A8468]/10">
+                    <p className="text-xs text-[#8A8468]">
+                      GST verification is currently disabled.
+                    </p>
+                  </div>
+                )}
+
+                {/* Developer Demo Button */}
+                {isDeveloper && (
+                  <div className="mt-3 pt-3 border-t border-[#33301F]">
+                    <button
+                      onClick={handleUseDeveloperDemo}
+                      disabled={gstVerifying}
+                      className="w-full px-3 py-2 text-xs border border-[#8A8468] text-[#8A8468] hover:border-[#C9A227] hover:text-[#C9A227] transition-colors disabled:opacity-40"
+                    >
+                      Use Developer Demo GSTIN
+                    </button>
+                  </div>
                 )}
               </div>
             )}

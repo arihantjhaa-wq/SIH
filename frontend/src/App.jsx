@@ -7,6 +7,7 @@ import FarmerPortal from "./pages/FarmerPortal.jsx";
 import ConsumerMarketplace from "./pages/ConsumerMarketplace.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import DeveloperAccess from "./pages/DeveloperAccess.jsx";
 
 function AuthedApp() {
   const { user, isAuthenticated, loading, logout } = useAuth();
@@ -37,9 +38,18 @@ function AuthedApp() {
         />
       );
     }
+    if (authView === "developer") {
+      return (
+        <DeveloperAccess
+          onSwitchToLogin={() => setAuthView("login")}
+          onBack={() => setAuthView("login")}
+        />
+      );
+    }
     return (
       <Login
         onSwitchToRegister={() => setAuthView("register")}
+        onSwitchToDeveloperAccess={() => setAuthView("developer")}
         onBack={() => setAuthView("login")}
       />
     );

@@ -3,6 +3,7 @@ import { ApiResponse } from "../utils/api-responce.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { emailVerificationMailgenContent, sendEmail } from "../utils/mail.js";
+import { clearDeveloperAccessRateLimit } from "../middlewares/rate-limit.middleware.js";
 import crypto from "crypto";
 
 
@@ -198,4 +199,111 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { user: req.user }, "Current user fetched successfully"));
 });
 
-export { registerUser , login , logout, verifyEmail, getCurrentUser};
+const developerAccess = asyncHandler(async (req, res) => {
+  // 1. Check if developer access is enabled
+  if (process.env.DEVELOPER_ACCESS_ENABLED !== 'true') {
+    throw new ApiError(403, "Developer access is currently unavailable");
+  }
+
+  // 2. Validate environment configuration
+  if (!process.env.DEVELOPER_ACCESS_KEY || process.env.DEVELOPER_ACCESS_KEY.length < 32) {
+    console.error("SECURITY: Developer access enabled but key is missing or weak");
+    throw new ApiError(500, "Server configuration error");
+  }
+
+  // 3. Extract and validate key from request body
+  const { developerKey } = req.body;
+
+  if (!developerKey || typeof developerKey !== 'string') {
+    console.warn(`[AUTH] Developer access attempt failed: missing or invalid key type at ${new Date().toISOString()}`);
+    throw new ApiError(400, "Please enter your developer key");
+  }
+
+  const trimmedKey = developerKey.trim();
+  if (!trimmedKey) {
+    console.warn(`[AUTH] Developer access attempt failed: empty key at ${new Date().toISOString()}`);
+    throw new ApiError(400, "Please enter your developer key");
+  }
+
+  // 4. Constant-time comparison to prevent timing attacks
+  const expectedKey = process.env.DEVELOPER_ACCESS_KEY;
+
+  if (trimmedKey.length !== expectedKey.length) {
+    console.warn(`[AUTH] Developer access attempt failed: invalid key at ${new Date().toISOString()}`);
+    throw new ApiError(401, "Invalid developer key");
+  }
+
+  // Use crypto.timingSafeEqual for constant-time comparison
+  const keyBuffer = Buffer.from(trimmedKey, 'utf8');
+  const expectedBuffer = Buffer.from(expectedKey, 'utf8');
+
+  let isValid;
+  try {
+    isValid = crypto.timingSafeEqual(keyBuffer, expectedBuffer);
+  } catch (err) {
+    console.warn(`[AUTH] Developer access attempt failed: comparison error at ${new Date().toISOString()}`);
+    throw new ApiError(401, "Invalid developer key");
+  }
+
+  if (!isValid) {
+    console.warn(`[AUTH] Developer access attempt failed: invalid key at ${new Date().toISOString()}`);
+    throw new ApiError(401, "Invalid developer key");
+  }
+
+  // 5. Clear rate limit on successful verification
+  clearDeveloperAccessRateLimit(req);
+
+  // 6. Create or fetch a dedicated developer user
+  let devUser = await User.findOne({ username: '__developer__' });
+
+  if (!devUser) {
+    // Create a special developer user (no password, email verified)
+    devUser = await User.create({
+      username: '__developer__',
+      email: 'developer@internal.local',
+      password: crypto.randomBytes(32).toString('hex'), // Random, never used
+      isEmailVerified: true,
+    });
+    console.log(`[AUTH] Created __developer__ user at ${new Date().toISOString()}`);
+  }
+
+  // 7. Generate tokens using existing auth mechanism
+  const accessToken = devUser.generateAccessToken();
+  const refreshToken = devUser.generateRefreshToken();
+
+  devUser.refreshToken = refreshToken;
+  await devUser.save({ validateBeforeSave: false });
+
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  };
+
+  console.log(`[AUTH] Developer access granted at ${new Date().toISOString()}`);
+
+  // 8. Return authenticated session (same structure as normal login)
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: {
+            _id: devUser._id,
+            username: devUser.username,
+            email: devUser.email,
+            isEmailVerified: devUser.isEmailVerified,
+            isDeveloper: true, // Client-side flag for UI
+          },
+          accessToken,
+          refreshToken,
+        },
+        "Developer access granted"
+      )
+    );
+});
+
+export { registerUser , login , logout, verifyEmail, getCurrentUser, developerAccess};

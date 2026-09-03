@@ -10,6 +10,11 @@ export async function loginUser({ username, password }) {
   return data.data;
 }
 
+export async function developerAccessLogin({ developerKey }) {
+  const { data } = await api.post("/auth/developer-access", { developerKey });
+  return data.data;
+}
+
 export async function getCurrentUser() {
   const { data } = await api.get("/auth/me");
   return data.data;

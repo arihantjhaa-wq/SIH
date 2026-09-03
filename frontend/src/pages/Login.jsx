@@ -25,7 +25,7 @@ function Field({ label, error, children }) {
   );
 }
 
-export default function Login({ onSwitchToRegister, onBack }) {
+export default function Login({ onSwitchToRegister, onSwitchToDeveloperAccess, onBack }) {
   const { login } = useAuth();
   const [form, setForm] = useState({ username: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -132,6 +132,15 @@ export default function Login({ onSwitchToRegister, onBack }) {
         </form>
 
         <p className="text-center text-sm text-[#C9C3AE] mt-6">
+          <button
+            onClick={onSwitchToDeveloperAccess}
+            className="text-[#8A8468] hover:text-[#C9A227] transition-colors text-xs"
+          >
+            Developer Access
+          </button>
+        </p>
+
+        <p className="text-center text-sm text-[#C9C3AE] mt-2">
           Don't have an account?{" "}
           <button
             onClick={onSwitchToRegister}

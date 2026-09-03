@@ -27,6 +27,9 @@ app.use("/api/v1/auth" , authRoutes);
 import productRoutes from './routes/product.rout.js'
 app.use("/api/v1/products" , productRoutes);
 
+import gstRoutes from './routes/gst.rout.js'
+app.use("/api/v1/gst", gstRoutes);
+
 // Global Error Handler
 import { ApiError } from './utils/api-error.js';
 

@@ -8,6 +8,7 @@ import React, {
 import {
   registerUser,
   loginUser,
+  developerAccessLogin,
   getCurrentUser,
   logoutUser,
 } from "../services/authService.js";
@@ -81,6 +82,22 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const developerLogin = useCallback(async ({ developerKey }) => {
+    setError(null);
+    setLoading(true);
+    try {
+      const result = await developerAccessLogin({ developerKey });
+      persistTokens(result.accessToken);
+      setUser(result.user);
+      return result.user;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await logoutUser();
@@ -98,6 +115,7 @@ export function AuthProvider({ children }) {
     error,
     register,
     login,
+    developerLogin,
     logout,
   };
 
