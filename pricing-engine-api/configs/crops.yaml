@@ -1,0 +1,121 @@
+crops:
+  - name: Tomato
+    category: fruit_veg
+    unit: kg
+    shelf_life_days: 7
+    is_active: true
+    description: "Primary demo crop — high volatility, perishable"
+  - name: Onion
+    category: fruit_veg
+    unit: kg
+    shelf_life_days: 30
+    is_active: true
+    description: "Second volatile crop, medium shelf life"
+  - name: Potato
+    category: root
+    unit: kg
+    shelf_life_days: 60
+    is_active: true
+    description: "Lower volatility root crop, stable demand"
+  - name: Rice
+    category: grain
+    unit: kg
+    shelf_life_days: 365
+    is_active: true
+    description: "Low-volatility staple grain"
+  - name: Wheat
+    category: grain
+    unit: kg
+    shelf_life_days: 365
+    is_active: true
+    description: "Second staple grain"
+  - name: Maize
+    category: grain
+    unit: kg
+    shelf_life_days: 180
+    is_active: true
+    description: "Major kharif grain crop"
+  - name: Groundnut
+    category: oilseed
+    unit: kg
+    shelf_life_days: 120
+    is_active: true
+    description: "Oilseed crop, moderate shelf life"
+  - name: Soybean
+    category: oilseed
+    unit: kg
+    shelf_life_days: 120
+    is_active: true
+    description: "Kharif oilseed, monsoon-dependent"
+  - name: Mustard
+    category: oilseed
+    unit: kg
+    shelf_life_days: 180
+    is_active: true
+    description: "Rabi oilseed, winter crop"
+  - name: Gram
+    category: pulse
+    unit: kg
+    shelf_life_days: 180
+    is_active: true
+    description: "Bengal gram / chana, rabi pulse"
+  - name: Lentil
+    category: pulse
+    unit: kg
+    shelf_life_days: 180
+    is_active: true
+    description: "Masoor dal, rabi pulse"
+  - name: Pigeon Pea
+    category: pulse
+    unit: kg
+    shelf_life_days: 180
+    is_active: true
+    description: "Tur/arhar dal, kharif pulse"
+  - name: Cabbage
+    category: vegetable
+    unit: kg
+    shelf_life_days: 14
+    is_active: true
+    description: "Cool-season leafy vegetable"
+  - name: Cauliflower
+    category: vegetable
+    unit: kg
+    shelf_life_days: 14
+    is_active: true
+    description: "Cool-season flower vegetable"
+  - name: Green Chilli
+    category: vegetable
+    unit: kg
+    shelf_life_days: 7
+    is_active: true
+    description: "High-volatility spice vegetable"
+  - name: Brinjal
+    category: vegetable
+    unit: kg
+    shelf_life_days: 10
+    is_active: true
+    description: "Eggplant, year-round crop"
+  - name: Mango
+    category: fruit
+    unit: kg
+    shelf_life_days: 10
+    is_active: true
+    description: "Seasonal fruit, high demand"
+  - name: Banana
+    category: fruit
+    unit: kg
+    shelf_life_days: 14
+    is_active: true
+    description: "Year-round tropical fruit"
+  - name: Orange
+    category: fruit
+    unit: kg
+    shelf_life_days: 21
+    is_active: true
+    description: "Citrus fruit, winter season"
+  - name: Apple
+    category: fruit
+    unit: kg
+    shelf_life_days: 30
+    is_active: true
+    description: "Temperate fruit, imported to Maharashtra"

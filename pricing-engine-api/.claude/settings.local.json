@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"^-.*\\\\.md$\")",
+      "Bash(python -m pytest tests/ -v --tb=short)"
+    ]
+  }
+}

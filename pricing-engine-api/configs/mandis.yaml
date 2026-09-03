@@ -1,0 +1,44 @@
+state: Maharashtra
+mandis:
+  - name: Pune
+    state: Maharashtra
+    district: Pune
+    latitude: 18.520430
+    longitude: 73.856744
+    agmarknet_code: MH_PUNE
+  - name: Nashik
+    state: Maharashtra
+    district: Nashik
+    latitude: 19.997453
+    longitude: 73.789802
+    agmarknet_code: MH_NASHIK
+  - name: Lasalgaon
+    state: Maharashtra
+    district: Nashik
+    latitude: 20.147222
+    longitude: 74.228611
+    agmarknet_code: MH_LASALGAON
+  - name: Vashi
+    state: Maharashtra
+    district: Thane
+    latitude: 19.077065
+    longitude: 72.998604
+    agmarknet_code: MH_VASHI
+  - name: Nagpur
+    state: Maharashtra
+    district: Nagpur
+    latitude: 21.145800
+    longitude: 79.088155
+    agmarknet_code: MH_NAGPUR
+  - name: Kolhapur
+    state: Maharashtra
+    district: Kolhapur
+    latitude: 16.704987
+    longitude: 74.243253
+    agmarknet_code: MH_KOLHAPUR
+  - name: Ahmednagar
+    state: Maharashtra
+    district: Ahmednagar
+    latitude: 19.094829
+    longitude: 74.747979
+    agmarknet_code: MH_AHMEDNAGAR

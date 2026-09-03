@@ -1,0 +1,23 @@
+{
+  "commodity_id": "112fcfa1-8c94-52ae-91a6-abb7dc6ec8b5",
+  "mandi_id": "0e35e355-b71d-58b5-8c41-01f6bd494961",
+  "trained_date": "2026-09-01T19:47:34.431340",
+  "feature_names": [
+    "lag_1",
+    "rolling_mean_7",
+    "price_momentum_7d",
+    "volatility_30d",
+    "demand_index",
+    "baseline"
+  ],
+  "training_mae": 2.9392164260448537,
+  "validation_mae": 5.091460934222888,
+  "naive_baseline_mae": 4.725357142857108,
+  "n_training": 103,
+  "n_validation": 28,
+  "model_type": "HistGradientBoostingRegressor",
+  "random_state": 42,
+  "min_observations": 60,
+  "baseline_only": false,
+  "model_path": "models\\model_112fcfa1-8c94-52ae-91a6-abb7dc6ec8b5_0e35e355-b71d-58b5-8c41-01f6bd494961_20260901_194734.pkl"
+}

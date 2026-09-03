@@ -1,0 +1,43 @@
+# Logistics Configuration - Section 18/19/36
+# MVP estimates - not production transportation rates
+
+# Vehicle classes (sorted by capacity)
+vehicle_classes:
+  - name: auto_rickshaw
+    capacity_kg: 200
+    per_km_rate: 8.0
+    description: "Small loads, short distances"
+  - name: tempo
+    capacity_kg: 1000
+    per_km_rate: 12.0
+    description: "Standard small truck"
+  - name: mini_truck
+    capacity_kg: 2500
+    per_km_rate: 18.0
+    description: "Medium loads"
+  - name: truck
+    capacity_kg: 5000
+    per_km_rate: 25.0
+    description: "Large loads"
+
+# Handling costs
+handling:
+  loading_cost_per_point: 30.0  # ₹ per loading point
+  unloading_cost_per_point: 30.0  # ₹ per unloading point
+
+# Spoilage buffer (Section 20)
+spoilage:
+  buffer_cost_per_kg: 0.50  # ₹ per kg (simplified)
+  max_spoilage_pct: 0.05  # 5% max buffer
+
+# Road distance multiplier (straight-line to road distance)
+road_distance_multiplier: 1.3
+
+# Fallback distance when coordinates unavailable
+fallback_distance_km: 50.0
+
+# Pooling (Section 19)
+pooling:
+  enabled: false  # Deferred to V0.2
+  radius_km: 15.0
+  max_farmers_per_vehicle: 5
