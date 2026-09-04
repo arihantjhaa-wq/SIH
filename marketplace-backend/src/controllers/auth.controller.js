@@ -194,9 +194,13 @@ const verifyEmail = asyncHandler(async (req ,res) => {
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = req.user?.toObject ? req.user.toObject() : { ...req.user };
+  if (user.username === "__developer__") {
+    user.isDeveloper = true;
+  }
   return res
     .status(200)
-    .json(new ApiResponse(200, { user: req.user }, "Current user fetched successfully"));
+    .json(new ApiResponse(200, { user }, "Current user fetched successfully"));
 });
 
 const developerAccess = asyncHandler(async (req, res) => {

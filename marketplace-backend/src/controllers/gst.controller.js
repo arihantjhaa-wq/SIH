@@ -2,12 +2,21 @@ import { ApiResponse } from "../utils/api-responce.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
-
-const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-const DEMO_DEVELOPER_GSTIN = "07AAAAA0000A1Z5";
+import {
+  hasSandboxCredentials,
+  verifyGstinWithSandbox,
+  clearSandboxTokenCache,
+} from "../utils/sandbox-client.js";
+import {
+  DEMO_DEVELOPER_GSTIN,
+  PROVIDER_UNAVAILABLE_MSG,
+  classifySandboxResponse,
+  isValidGstinFormat,
+} from "../utils/gst-classifier.js";
 
 /**
- * Checks if the incoming request is from an authenticated developer session.
+ * Resolves the authenticated user for a request, or null when unauthenticated.
+ * Used to independently verify a developer session on the server.
  */
 async function getAuthenticatedUser(req) {
   try {
@@ -22,10 +31,39 @@ async function getAuthenticatedUser(req) {
 
     const user = await User.findById(decodedToken._id).select("username email");
     return user;
-  } catch (err) {
+  } catch {
     return null;
   }
 }
+
+function formatInvalid(message) {
+  return new ApiResponse(
+    200,
+    { status: "FORMAT_INVALID", data: null, message },
+    "Invalid GSTIN format"
+  );
+}
+
+function notVerified() {
+  return new ApiResponse(
+    200,
+    {
+      status: "NOT_VERIFIED",
+      data: null,
+      message: "GSTIN not found or inactive with tax authority.",
+    },
+    "GSTIN not verified"
+  );
+}
+
+function providerUnavailable() {
+  return new ApiResponse(
+    200,
+    { status: "PROVIDER_UNAVAILABLE", data: null, message: PROVIDER_UNAVAILABLE_MSG },
+    "Provider unavailable"
+  );
+}
+
 
 /**
  * Verify GSTIN using Sandbox.co.in GST API
@@ -34,7 +72,7 @@ async function getAuthenticatedUser(req) {
 export const verifyGstin = asyncHandler(async (req, res) => {
   const { gstin } = req.body;
 
-  // 1. Check if GST Verification is enabled
+  // 1. Is verification enabled by configuration?
   if (process.env.GST_VERIFICATION_ENABLED !== "true") {
     return res.status(200).json(
       new ApiResponse(
@@ -48,111 +86,38 @@ export const verifyGstin = asyncHandler(async (req, res) => {
     );
   }
 
-  // 2. Format & Sanitize GSTIN
-  if (!gstin || typeof gstin !== "string") {
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          status: "FORMAT_INVALID",
-          message: "Please enter a valid 15-character GSTIN.",
-        },
-        "Invalid GSTIN format"
-      )
-    );
+  // 2. Format & sanitize input
+  if (typeof gstin !== "string" || !gstin.trim()) {
+    return res
+      .status(200)
+      .json(formatInvalid("Please enter a valid 15-character GSTIN."));
   }
 
   const cleanGstin = gstin.trim().toUpperCase();
 
-  // 3. Structural Validation (Standard 15-char Indian GSTIN format)
-  if (!GSTIN_REGEX.test(cleanGstin)) {
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          status: "FORMAT_INVALID",
-          message: "Invalid GSTIN format. Must be 15 alphanumeric characters (e.g. 27AAACW7823G1ZV).",
-        },
-        "Invalid GSTIN format"
-      )
-    );
+  // 3. Local structural validation — bad format never reaches Sandbox
+  if (!isValidGstinFormat(cleanGstin)) {
+    return res
+      .status(200)
+      .json(
+        formatInvalid(
+          "Invalid GSTIN format. Must be 15 alphanumeric characters (e.g. 27AAACW7823G1ZV)."
+        )
+      );
   }
 
-  // 4. Developer Demo Access Path
-  // Check if authenticated caller is a verified developer
+  // 4. Developer demo path — server independently verifies the authenticated
+  //    developer session. isDemoRequest alone grants nothing.
   const currentUser = await getAuthenticatedUser(req);
-  const isDeveloper = currentUser && currentUser.username === "__developer__";
+  const isDeveloper = Boolean(
+    currentUser && currentUser.username === "__developer__"
+  );
 
-  if (isDeveloper && (cleanGstin === DEMO_DEVELOPER_GSTIN || req.body.isDemoRequest)) {
-    console.log(`[GST] Developer demo verification granted for ${cleanGstin} at ${new Date().toISOString()}`);
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          status: "VERIFIED",
-          data: {
-            gstin: cleanGstin,
-            legalName: "AgriDirect Developer Demo Enterprise",
-            tradeName: "AgriDirect Demo Agro Supplies",
-            gstinStatus: "Active",
-            taxpayerType: "Regular",
-            isDemo: true,
-          },
-          message: "Developer demo GSTIN verified successfully.",
-        },
-        "GSTIN verified (Developer Demo)"
-      )
-    );
-  }
-
-  // 5. Check Sandbox credentials configuration
-  const apiKey = process.env.SANDBOX_API_KEY;
-  const authToken = process.env.SANDBOX_AUTH_TOKEN;
-
-  if (!apiKey || !authToken) {
-    console.warn(`[GST] Sandbox API credentials missing in environment at ${new Date().toISOString()}`);
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          status: "PROVIDER_UNAVAILABLE",
-          message: "GST verification service is temporarily unavailable. Please try again later.",
-        },
-        "Provider unavailable"
-      )
-    );
-  }
-
-  // 6. Call Sandbox GSTIN Verification API
-  const sandboxUrl = `https://api.sandbox.co.in/gsp/public/gstin/${encodeURIComponent(cleanGstin)}`;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-
-  try {
-    const response = await fetch(sandboxUrl, {
-      method: "GET",
-      headers: {
-        "x-api-key": apiKey,
-        "Authorization": authToken.startsWith("Bearer ") ? authToken : authToken,
-        "x-api-version": "1.0",
-        "Content-Type": "application/json",
-      },
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    const responseData = await response.json().catch(() => null);
-
-    if (response.ok && responseData?.data) {
-      const gspData = responseData.data;
-      const legalName = gspData.legal_name || gspData.trade_name || "Registered Taxpayer";
-      const tradeName = gspData.trade_name || gspData.legal_name || "Business Enterprise";
-      const gstinStatus = gspData.status || "Active";
-      const taxpayerType = gspData.taxpayer_type || "Regular";
-
-      console.log(`[GST] GSTIN ${cleanGstin} verified successfully via Sandbox at ${new Date().toISOString()}`);
-
+  if (cleanGstin === DEMO_DEVELOPER_GSTIN) {
+    if (isDeveloper) {
+      console.log(
+        `[GST] Developer demo verification granted at ${new Date().toISOString()}`
+      );
       return res.status(200).json(
         new ApiResponse(
           200,
@@ -160,55 +125,62 @@ export const verifyGstin = asyncHandler(async (req, res) => {
             status: "VERIFIED",
             data: {
               gstin: cleanGstin,
-              legalName,
-              tradeName,
-              gstinStatus,
-              taxpayerType,
-              isDemo: false,
+              legalName: "AgriDirect Developer Demo Enterprise",
+              tradeName: "AgriDirect Demo Agro Supplies",
+              gstinStatus: "Active",
+              taxpayerType: "Regular",
+              isDemo: true,
             },
-            message: "GSTIN verified successfully.",
+            message: "Developer demo GSTIN verified successfully.",
           },
-          "GSTIN verified"
-        )
-      );
-    } else if (response.status === 404 || response.status === 400 || (responseData && responseData.code === 404)) {
-      console.warn(`[GST] GSTIN ${cleanGstin} not found in GST portal (Status ${response.status}) at ${new Date().toISOString()}`);
-      return res.status(200).json(
-        new ApiResponse(
-          200,
-          {
-            status: "NOT_VERIFIED",
-            message: "GSTIN not found or inactive with tax authority.",
-          },
-          "GSTIN not verified"
-        )
-      );
-    } else {
-      console.warn(`[GST] Sandbox provider returned status ${response.status} at ${new Date().toISOString()}`);
-      return res.status(200).json(
-        new ApiResponse(
-          200,
-          {
-            status: "PROVIDER_UNAVAILABLE",
-            message: "GST verification service is temporarily unavailable. Please try again later.",
-          },
-          "Provider unavailable"
+          "GSTIN verified (Developer Demo)"
         )
       );
     }
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error(`[GST] Error calling Sandbox API: ${error.message} at ${new Date().toISOString()}`);
 
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          status: "PROVIDER_UNAVAILABLE",
-          message: "GST verification service is temporarily unavailable. Please try again later.",
-        },
-        "Provider unavailable"
-      )
+    // Non-developer cannot use the demo GSTIN, and the demo GSTIN is never
+    // sent to Sandbox.
+    console.warn(
+      `[GST] Non-developer attempted demo GSTIN ${cleanGstin} at ${new Date().toISOString()}`
     );
+    return res.status(200).json(notVerified());
+  }
+
+  // 5. Sandbox credentials must be configured
+  if (!hasSandboxCredentials()) {
+    console.warn(
+      `[GST] Sandbox API credentials missing in environment at ${new Date().toISOString()}`
+    );
+    return res.status(200).json(providerUnavailable());
+  }
+
+  // 6. Call the current Sandbox Verify GSTIN API
+  try {
+    let result = await verifyGstinWithSandbox(cleanGstin);
+
+    // 401/403 -> the cached access token likely expired. Clear and retry once
+    // with a freshly minted token before declaring the provider unavailable.
+    if (result.status === 401 || result.status === 403) {
+      console.warn(
+        `[GST] Sandbox auth rejected (HTTP ${result.status}); refreshing token at ${new Date().toISOString()}`
+      );
+      clearSandboxTokenCache();
+      try {
+        result = await verifyGstinWithSandbox(cleanGstin);
+      } catch {
+        return res.status(200).json(providerUnavailable());
+      }
+    }
+
+    const classification = classifySandboxResponse(result);
+    return res.status(200).json(
+      new ApiResponse(200, classification, classification.status === "VERIFIED" ? "GSTIN verified" : "GSTIN verification result")
+    );
+  } catch (err) {
+    // Network / DNS / timeout / authentication / configuration failure
+    console.warn(
+      `[GST] Sandbox call failed (${err.code || "unknown"}): ${err.message} at ${new Date().toISOString()}`
+    );
+    return res.status(200).json(providerUnavailable());
   }
 });
