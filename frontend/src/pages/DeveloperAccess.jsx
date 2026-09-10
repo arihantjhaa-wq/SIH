@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Leaf, ArrowLeft, Code } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function DeveloperAccess({ onSwitchToLogin, onBack }) {
   const { developerLogin } = useAuth();
+  const navigate = useNavigate();
   const [developerKey, setDeveloperKey] = useState("");
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -21,6 +23,7 @@ export default function DeveloperAccess({ onSwitchToLogin, onBack }) {
 
     try {
       await developerLogin({ developerKey: developerKey.trim() });
+      navigate("/developer", { replace: true });
     } catch (err) {
       setError(err.message || "Invalid developer key");
     } finally {
@@ -41,8 +44,11 @@ export default function DeveloperAccess({ onSwitchToLogin, onBack }) {
 
       <div className="max-w-md w-full py-12">
         <div className="flex items-center gap-2 justify-center mb-6">
-          <Leaf className="w-6 h-6 text-[#C9A227]" strokeWidth={1.75} />
-          <span className="ff-display text-2xl tracking-tight">Kheti Seedha</span>
+          <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
+          <span className="brand-logo">
+            <span className="devanagari">कृषि</span>{" "}
+            <span className="latin">Setu</span>
+          </span>
         </div>
 
         <div className="flex items-center gap-2 justify-center mb-2">

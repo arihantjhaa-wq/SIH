@@ -8,6 +8,7 @@ import {
   Store,
   RefreshCcw,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const FIELD_FOCUS = `.fm-field:focus { border-color: #C9A227; }`;
@@ -56,6 +57,7 @@ export default function Login({
   onBack,
 }) {
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const copy = ROLE_COPY[role] || ROLE_COPY.consumer;
   const RoleIcon = copy.icon;
@@ -119,10 +121,18 @@ export default function Login({
     setSubmitting(true);
 
     try {
-      await login({
+      const returnedUser = await login({
         username: form.username.trim(),
         password: form.password,
       });
+
+      // AuthContext state is already committed (setUser ran). Navigate to
+      // the portal that matches this login flow — using the route param as
+      // the canonical source of truth fixes any casing drift ("/farmer" param
+      // is always lowercase, regardless of what user.role returns).
+      const devFlag = !!(returnedUser?.isDeveloper || returnedUser?._isDeveloper);
+      const dest = devFlag ? "/developer" : `/${role}`;
+      navigate(dest, { replace: true });
     } catch (err) {
       /*
        * Handle Axios errors.
@@ -189,11 +199,12 @@ export default function Login({
 
       <div className="max-w-md w-full py-12">
         {/* Logo */}
-        <div className="flex items-center gap-2 justify-center mb-8">
-          <Leaf className="w-6 h-6 text-[#C9A227]" strokeWidth={1.75} />
+        <div className="flex items-center gap-2.5 justify-center mb-8">
+          <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
 
-          <span className="ff-display text-2xl tracking-tight">
-            Kheti Seedha
+          <span className="brand-logo">
+            <span className="devanagari">कृषि</span>{" "}
+            <span className="latin">Setu</span>
           </span>
         </div>
 

@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Leaf, ArrowLeft, PackagePlus, Trash2, Camera, X } from "lucide-react";
 import { CATEGORY_OPTIONS, UNIT_OPTIONS, money } from "../utils/marketplace.js";
 import { useProducts } from "../context/ProductContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import ProductPhoto from "../components/ProductPhoto.jsx";
 import ForecastAdvisor from "../components/ForecastAdvisor.jsx";
+import ProfileButton from "../components/ProfileButton.jsx";
 
 
 const EMPTY_FORM = {
@@ -187,39 +189,24 @@ export default function FarmerPortal({ onSwitch, onLogout }) {
       <div className="bg-[#14140F] text-[#F3ECDD]">
         <header className="border-b border-[#33301F]">
           <div className="max-w-6xl mx-auto px-5 py-5 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Leaf className="w-6 h-6 text-[#C9A227]" strokeWidth={1.75} />
-              <span className="ff-display text-2xl tracking-tight">
-                Kheti Seedha
+            <div className="flex items-center gap-2.5">
+              <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
+              <span className="brand-logo">
+                <span className="devanagari">कृषि</span>{" "}
+                <span className="latin">Setu</span>
               </span>
               <span className="ml-2 text-[11px] uppercase tracking-wide border border-[#C9A227] text-[#C9A227] px-2 py-0.5">
                 Farmer portal
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  localStorage.setItem("ks_marketInsights", "true");
-                  window.location.reload();
-                }}
+            <div className="flex items-center gap-3">
+              <Link
+                to="/insights"
                 className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#4A4630] text-[#C9C3AE] hover:border-[#C9A227] hover:text-[#C9A227] transition-colors"
               >
                 Market Insights
-              </button>
-              <button
-                onClick={onSwitch}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#4A4630] text-[#C9C3AE] hover:border-[#C9A227] hover:text-[#C9A227] transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" /> Switch role
-              </button>
-              {onLogout && (
-                <button
-                  onClick={onLogout}
-                  className="px-3 py-2 text-sm text-[#C9C3AE] hover:text-[#C9A227] transition-colors"
-                >
-                  Log out
-                </button>
-              )}
+              </Link>
+              <ProfileButton user={user} onSwitch={onSwitch} onLogout={onLogout} />
             </div>
           </div>
         </header>

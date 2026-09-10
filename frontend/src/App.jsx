@@ -1,7 +1,11 @@
+import React from "react";
+import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { ProductProvider } from "./context/ProductContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import { usePersistentState } from "./hooks/usePersistentState.js";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+
 import RoleGate from "./pages/RoleGate.jsx";
 import FarmerPortal from "./pages/FarmerPortal.jsx";
 import ConsumerMarketplace from "./pages/ConsumerMarketplace.jsx";
@@ -10,234 +14,202 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import DeveloperAccess from "./pages/DeveloperAccess.jsx";
 import DeveloperDashboard from "./pages/DeveloperDashboard.jsx";
+import UserProfile from "./pages/UserProfile.jsx";
 
-function AuthedApp() {
+function AppRoutes() {
   const { user, isAuthenticated, loading, logout } = useAuth();
   const [role, setRole] = usePersistentState("ks_role", null);
-  const [authView, setAuthView] = usePersistentState(
-    "ks_authView",
-    "role-selection",
-  );
-  // Track if we're viewing Market Insights
-  const [viewMarketInsights, setViewMarketInsights] = usePersistentState(
-    "ks_marketInsights",
-    false,
-  );
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // ------------------------------------------------------------------
-  // Helpers: navigate to a role-specific login and back
-  // ------------------------------------------------------------------
-  function enterRole(selectedRole) {
-    setRole(selectedRole);
-    setAuthView(
-      selectedRole === "farmer" ? "farmer-login" : "consumer-login",
-    );
-  }
+  React.useEffect(() => {
+    if (location.pathname === "/" && isAuthenticated) {
+      if (user?.isDeveloper) {
+        navigate("/developer", { replace: true });
+      } else if (role === "farmer") {
+        navigate("/farmer", { replace: true });
+      } else if (role === "consumer") {
+        navigate("/consumer", { replace: true });
+      }
+    }
+  }, [location.pathname, isAuthenticated, user, role, navigate]);
 
-  function backToRoleSelection() {
-    // Keep role hint so the landing page can pre-highlight, but do not
-    // auto-redirect to portal — user wants to re-choose.
-    setAuthView("role-selection");
-  }
-
-  // "Switch role" from inside a portal — clear the stored role so an
-  // authenticated user can re-choose on the landing page.
   function switchRole() {
     setRole(null);
-    setAuthView("role-selection");
-  }
-
-  // Cross-role switch from within a login page (e.g. Farmer → Consumer).
-  function switchRoleTo(targetRole) {
-    setRole(targetRole);
-    setAuthView(
-      targetRole === "farmer" ? "farmer-login" : "consumer-login",
-    );
+    navigate("/");
   }
 
   function handleLogout() {
-    logout();
-    // After logout, reset to the public landing page
+    logout();             // clears state synchronously (see AuthContext)
     setRole(null);
-    setAuthView("role-selection");
+    navigate("/", { replace: true });  // replace prevents Back from restoring protected URL
   }
 
-  // ------------------------------------------------------------------
-  // Loading
-  // ------------------------------------------------------------------
+  function enterRole(selectedRole) {
+    setRole(selectedRole);
+    if (isAuthenticated) {
+      navigate(`/${selectedRole}`, { replace: true });
+    } else {
+      navigate(`/login/${selectedRole}`);
+    }
+  }
+
   if (loading) {
     return (
       <div
         className="min-h-screen w-full bg-[#14140F] text-[#C9A227] flex items-center justify-center"
-        style={{
-          fontFamily: "'Work Sans', ui-sans-serif, system-ui, sans-serif",
-        }}
+        style={{ fontFamily: "'Work Sans', ui-sans-serif, system-ui, sans-serif" }}
       >
-        <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap');
-          .ff-display { font-family: 'Fraunces', ui-serif, Georgia, serif; }
-        `}</style>
-        <p className="ff-display text-lg">Loading…</p>
+        <p className="font-serif text-lg">Loading…</p>
       </div>
     );
   }
 
-  // ==================================================================
-  // Authenticated: developer takes priority, then role → portal/marketplace
-  // ==================================================================
-  if (isAuthenticated) {
-    // Developer/Admin — full marketplace visibility (server-authoritative).
-    // This must check user flag, not a frontend role param, so a normal
-    // farmer can never reach it by switching role or tampering routes.
-    if (user?.isDeveloper) {
-      return (
-        <DeveloperDashboard
-          onSwitch={switchRole}
-          onLogout={handleLogout}
-          user={user}
-        />
-      );
-    }
-
-    if (role === "farmer") {
-      // Check if user wants Market Insights
-      if (viewMarketInsights) {
-        return (
-          <MarketInsights
-            onBack={() => {
-              setViewMarketInsights(false);
-              setRole("farmer");
-            }}
-          />
-        );
-      }
-
-      return (
-        <ProductProvider scope="mine">
-          <CartProvider>
-            <FarmerPortal
-              onSwitch={switchRole}
-              onLogout={handleLogout}
-              user={user}
-            />
-          </CartProvider>
-        </ProductProvider>
-      );
-    }
-
-    if (role === "consumer") {
-      // Check if user wants Market Insights
-      if (viewMarketInsights) {
-        return (
-          <MarketInsights
-            onBack={() => {
-              setViewMarketInsights(false);
-              setRole("consumer");
-            }}
-          />
-        );
-      }
-
-      return (
-        <ProductProvider scope="all">
-          <CartProvider>
-            <ConsumerMarketplace
-              onSwitch={switchRole}
-              onLogout={handleLogout}
-              user={user}
-            />
-          </CartProvider>
-        </ProductProvider>
-      );
-    }
-
-    // Authenticated but no role stored — show landing to choose a path
-    return <RoleGate onSelect={enterRole} onLogout={handleLogout} />;
-  }
-
-  // ==================================================================
-  // Unauthenticated: public landing + role-specific auth
-  // ==================================================================
-
-  // Role-specific login pages
-  if (authView === "farmer-login") {
-    return (
-      <Login
-        role="farmer"
-        onSwitchToRegister={() => setAuthView("farmer-register")}
-        onSwitchToDeveloperAccess={() => setAuthView("developer")}
-        onSwitchRole={switchRoleTo}
-        onBack={backToRoleSelection}
-      />
-    );
-  }
-
-  if (authView === "consumer-login") {
-    return (
-      <Login
-        role="consumer"
-        onSwitchToRegister={() => setAuthView("consumer-register")}
-        onSwitchToDeveloperAccess={() => setAuthView("developer")}
-        onSwitchRole={switchRoleTo}
-        onBack={backToRoleSelection}
-      />
-    );
-  }
-
-  // Register — return to the login for the role the user came from
-  if (authView === "farmer-register" || authView === "consumer-register") {
-    const returnTo = authView === "farmer-register" ? "farmer" : "consumer";
-    return (
-      <Register
-        role={returnTo}
-        onSwitchToLogin={() =>
-          setAuthView(
-            returnTo === "farmer" ? "farmer-login" : "consumer-login",
-          )
+  return (
+    <Routes>
+      {/* ─────────────────────────────────────────────────────────
+       * Public routes
+       * ───────────────────────────────────────────────────────── */}
+      <Route
+        path="/"
+        element={
+          isAuthenticated && user?.isDeveloper ? <Navigate to="/developer" replace /> :
+          isAuthenticated && role === "farmer" ? <Navigate to="/farmer" replace /> :
+          isAuthenticated && role === "consumer" ? <Navigate to="/consumer" replace /> :
+          <RoleGate onSelect={enterRole} onLogout={handleLogout} />
         }
-        onBack={backToRoleSelection}
       />
-    );
-  }
 
-  // Legacy "register" value (pre-redesign localStorage) → farmer register
-  if (authView === "register") {
-    return (
-      <Register
-        role={role || "farmer"}
-        onSwitchToLogin={() =>
-          setAuthView(
-            role === "consumer" ? "consumer-login" : "farmer-login",
-          )
+      <Route
+        path="/login/:roleParam"
+        element={<LoginWrapper setRole={setRole} />}
+      />
+
+      <Route
+        path="/register/:roleParam"
+        element={<RegisterWrapper setRole={setRole} />}
+      />
+
+      <Route
+        path="/developer-access"
+        element={<DeveloperAccess onSwitchToLogin={() => navigate("/")} onBack={() => navigate("/")} />}
+      />
+
+      {/* ─────────────────────────────────────────────────────────
+       * Protected routes — wrapped in ProtectedRoute
+       * ───────────────────────────────────────────────────────── */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <UserProfile onSwitch={switchRole} onLogout={handleLogout} />
+          </ProtectedRoute>
         }
-        onBack={backToRoleSelection}
       />
-    );
+
+      <Route
+        path="/insights"
+        element={
+          <ProtectedRoute>
+            <MarketInsights onBack={() => navigate(-1)} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/farmer"
+        element={
+          <ProtectedRoute>
+            <ProductProvider scope="mine">
+              <CartProvider>
+                <FarmerPortal onSwitch={switchRole} onLogout={handleLogout} user={user} />
+              </CartProvider>
+            </ProductProvider>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/consumer"
+        element={
+          <ProtectedRoute>
+            <ProductProvider scope="all">
+              <CartProvider>
+                <ConsumerMarketplace onSwitch={switchRole} onLogout={handleLogout} user={user} />
+              </CartProvider>
+            </ProductProvider>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/developer"
+        element={
+          <ProtectedRoute>
+            <DeveloperDashboard onSwitch={switchRole} onLogout={handleLogout} user={user} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Fallback — unknown routes go home */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * Wrapper helpers — extract useParams() for the component prop tree
+ * ─────────────────────────────────────────────────────────────── */
+
+function LoginWrapper({ setRole }) {
+  const { roleParam } = useParams();
+  const navigate = useNavigate();
+
+  if (roleParam !== "farmer" && roleParam !== "consumer") {
+    return <Navigate to="/" replace />;
   }
 
-  // Developer Access (accessible from either login)
-  if (authView === "developer") {
-    return (
-      <DeveloperAccess
-        onSwitchToLogin={() => {
-          // Return to whichever login the user came from
-          if (role === "consumer") setAuthView("consumer-login");
-          else if (role === "farmer") setAuthView("farmer-login");
-          else setAuthView("role-selection");
-        }}
-        onBack={backToRoleSelection}
-      />
-    );
+  return (
+    <Login
+      role={roleParam}
+      onSwitchToRegister={() => navigate(`/register/${roleParam}`)}
+      onSwitchToDeveloperAccess={() => navigate("/developer-access")}
+      onSwitchRole={(targetRole) => {
+        setRole(targetRole);
+        navigate(`/login/${targetRole}`);
+      }}
+      onBack={() => {
+        setRole(null);
+        navigate("/");
+      }}
+    />
+  );
+}
+
+function RegisterWrapper({ setRole }) {
+  const { roleParam } = useParams();
+  const navigate = useNavigate();
+
+  if (roleParam !== "farmer" && roleParam !== "consumer") {
+    return <Navigate to="/" replace />;
   }
 
-  // Default / fallback: public landing page
-  return <RoleGate onSelect={enterRole} />;
+  return (
+    <Register
+      role={roleParam}
+      onSwitchToLogin={() => navigate(`/login/${roleParam}`)}
+      onBack={() => {
+        setRole(null);
+        navigate("/");
+      }}
+    />
+  );
 }
 
 function App() {
   return (
     <AuthProvider>
-      <AuthedApp />
+      <AppRoutes />
     </AuthProvider>
   );
 }

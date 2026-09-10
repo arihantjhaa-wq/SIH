@@ -99,13 +99,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
-    try {
-      await logoutUser();
-    } catch {
-      // ignore network errors on logout
-    }
+    // Clear local state immediately (synchronously) so isAuthenticated flips
+    // false before the navigation handler runs. This prevents the back-button
+    // race where the protected route could briefly re-render with stale state.
     persistTokens(null);
     setUser(null);
+
+    // Best-effort server-side logout (don't await — clears cookies, revokes
+    // refresh token; safe to fire-and-forget from the client's perspective).
+    logoutUser().catch(() => {});
   }, []);
 
   const value = {

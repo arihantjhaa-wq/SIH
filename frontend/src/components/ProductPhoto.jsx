@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { ImageOff } from "lucide-react";
 import { photoUrl } from "../utils/marketplace.js";
+import axios from 'axios';
+
 
 export default function ProductPhoto({ product, className }) {
   const [failed, setFailed] = useState(false);

@@ -15,10 +15,11 @@ export default function RoleGate({ onSelect, onLogout }) {
       `}</style>
 
       <div className="max-w-3xl w-full py-16">
-        <div className="flex items-center gap-2 justify-center mb-3">
-          <Leaf className="w-6 h-6 text-[#C9A227]" strokeWidth={1.75} />
-          <span className="ff-display text-2xl tracking-tight">
-            Kheti Seedha
+        <div className="flex items-center gap-2.5 justify-center mb-3">
+          <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
+          <span className="brand-logo">
+            <span className="devanagari">कृषि</span>{" "}
+            <span className="latin">Setu</span>
           </span>
         </div>
         <h1 className="ff-display text-3xl sm:text-4xl text-center leading-[1.15]">

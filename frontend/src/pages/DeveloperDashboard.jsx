@@ -11,6 +11,7 @@ import { Leaf, ArrowLeft, RefreshCcw, Trash2, X } from "lucide-react";
 import { money } from "../utils/marketplace.js";
 import { getAdminProducts, deleteProduct } from "../services/productService.js";
 import ProductPhoto from "../components/ProductPhoto.jsx";
+import ProfileButton from "../components/ProfileButton.jsx";
 
 function StatCard({ value, label }) {
   return (
@@ -121,28 +122,17 @@ export default function DeveloperDashboard({ onSwitch, onLogout, user }) {
         <header className="border-b border-[#33301F]">
           <div className="max-w-6xl mx-auto px-5 py-5 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Leaf className="w-6 h-6 text-[#C9A227]" strokeWidth={1.75} />
-              <span className="ff-display text-2xl tracking-tight">Kheti Seedha</span>
+              <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
+              <span className="brand-logo">
+                <span className="devanagari">कृषि</span>{" "}
+                <span className="latin">Setu</span>
+              </span>
               <span className="ml-2 text-[11px] uppercase tracking-wide border border-[#C9A227] text-[#C9A227] px-2 py-0.5">
                 Developer • Management dashboard
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onSwitch}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#4A4630] text-[#C9C3AE] hover:border-[#C9A227] hover:text-[#C9A227] transition-colors"
-                aria-label="Switch role"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" /> Switch role
-              </button>
-              {onLogout && (
-                <button
-                  onClick={onLogout}
-                  className="px-3 py-2 text-sm text-[#C9C3AE] hover:text-[#C9A227] transition-colors"
-                >
-                  Log out
-                </button>
-              )}
+            <div className="flex items-center gap-3">
+              <ProfileButton user={user} onSwitch={onSwitch} onLogout={onLogout} />
             </div>
           </div>
         </header>

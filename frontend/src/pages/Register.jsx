@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Leaf, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 function Field({ label, error, children }) {
@@ -52,6 +53,7 @@ export default function Register({
   onBack
 }) {
   const { register } = useAuth();
+  const navigate = useNavigate();
 
   const copy = ROLE_COPY_REGISTER[role] || ROLE_COPY_REGISTER.consumer;
 
@@ -149,7 +151,8 @@ export default function Register({
     setSubmitting(true);
 
     try {
-      // Pass name + address to backend for registration
+      // register() performs the signup AND auto-login, returning the user.
+      // Navigate to the portal matching this flow once auth state is committed.
       await register({
         username: form.username.trim(),
         email: form.email.trim(),
@@ -158,6 +161,7 @@ export default function Register({
         address: form.address.trim() || undefined,
         role,
       });
+      navigate(`/${role}`, { replace: true });
     } catch (err) {
       /*
        * Axios error handling
@@ -230,14 +234,15 @@ export default function Register({
 
       <div className="max-w-md w-full py-12">
         {/* Logo */}
-        <div className="flex items-center gap-2 justify-center mb-6">
+        <div className="flex items-center gap-2.5 justify-center mb-6">
           <Leaf
-            className="w-6 h-6 text-[#C9A227]"
+            className="w-6 h-6 text-[#E5A93C]"
             strokeWidth={1.75}
           />
 
-          <span className="ff-display text-2xl tracking-tight">
-            Kheti Seedha
+          <span className="brand-logo">
+            <span className="devanagari">कृषि</span>{" "}
+            <span className="latin">Setu</span>
           </span>
         </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
   Leaf,
   ArrowLeft,
@@ -17,9 +18,10 @@ import {
   MAX_SAVER_THRESHOLD,
 } from "../utils/marketplace.js";
 import { useProducts } from "../context/ProductContext.jsx";
-import { useCart } from "../context/CartContext.jsx";
-import { usePersistentState } from "../hooks/usePersistentState.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useCart } from "../context/CartContext.jsx";
+import ProfileButton from "../components/ProfileButton.jsx";
+import { usePersistentState } from "../hooks/usePersistentState.js";
 import { verifyGstinApi } from "../services/gstService.js";
 import CartButton from "../components/CartButton.jsx";
 import ConsumerToggle from "../components/ConsumerToggle.jsx";
@@ -258,37 +260,20 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
       <div className="bg-[#14140F] text-[#F3ECDD]">
         <header className="border-b border-[#33301F]">
           <div className="max-w-6xl mx-auto px-5 py-5 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Leaf className="w-6 h-6 text-[#C9A227]" strokeWidth={1.75} />
-              <span className="ff-display text-2xl tracking-tight">
-                Kheti Seedha
+            <div className="flex items-center gap-2.5">
+              <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
+              <span className="brand-logo">
+                <span className="devanagari">कृषि</span>{" "}
+                <span className="latin">Setu</span>
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-3">
-              <button
-                onClick={onSwitch}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#4A4630] text-[#C9C3AE] hover:border-[#C9A227] hover:text-[#C9A227] transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" /> Switch role
-              </button>
-              {onLogout && (
-                <button
-                  onClick={onLogout}
-                  className="px-2 py-2 text-sm text-[#C9C3AE] hover:text-[#C9A227] transition-colors"
-                >
-                  Log out
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  // Navigate to Market Insights via localStorage trigger
-                  localStorage.setItem("ks_marketInsights", "true");
-                  window.location.reload();
-                }}
+              <Link
+                to="/insights"
                 className="flex items-center gap-1.5 px-3 py-2 text-sm border border-[#4A4630] text-[#C9C3AE] hover:border-[#C9A227] hover:text-[#C9A227] transition-colors"
               >
                 Market Insights
-              </button>
+              </Link>
               <ConsumerToggle
                 consumerType={consumerType}
                 onChange={(t) => setConsumerType(t)}
@@ -298,23 +283,11 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                 active={view === "cart"}
                 onClick={() => setView(view === "cart" ? "shop" : "cart")}
               />
+              <ProfileButton user={user} onSwitch={onSwitch} onLogout={onLogout} />
             </div>
           </div>
           <div className="sm:hidden max-w-6xl mx-auto px-5 pb-4 flex items-center gap-2">
-            <button
-              onClick={onSwitch}
-              className="flex items-center justify-center px-2.5 py-2 text-sm border border-[#4A4630] text-[#C9C3AE]"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-            </button>
-            {onLogout && (
-              <button
-                onClick={onLogout}
-                className="px-2 py-2 text-xs text-[#C9C3AE] hover:text-[#C9A227]"
-              >
-                Log out
-              </button>
-            )}
+            <ProfileButton user={user} onSwitch={onSwitch} onLogout={onLogout} />
             <div className="flex-1">
               <ConsumerToggle
                 consumerType={consumerType}
@@ -326,6 +299,12 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
               active={view === "cart"}
               onClick={() => setView(view === "cart" ? "shop" : "cart")}
             />
+            <Link
+              to="/insights"
+              className="text-sm text-[#C9C3AE] hover:text-[#C9A227] border border-[#4A4630] px-2 py-1.5"
+            >
+              Insights
+            </Link>
           </div>
         </header>
 

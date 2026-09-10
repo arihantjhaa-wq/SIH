@@ -1,1 +1,79 @@
 @import "tailwindcss";
+
+/* ─── Brand Lockup: कृषि Setu ───
+ * Typeface: Gotu (Ek Type) — a Devanagari + Latin display serif with
+ * characterful hook terminals. Loaded via <link> in index.html.
+ * Fallbacks: Noto Sans Devanagari (loaded) → system sans.
+ *
+ * Visual recipe:
+ *   - कृषि  → warm golden hue #E5A93C (the heavy, rooted word)
+ *   - Setu  → lighter champagne tint #F4D06F (the airy Latin echo)
+ *   - Leaf  → currentColor, sized to the cap band, optically centered
+ *   - Fluid sizing via clamp(); Gotu has compact metrics, so it runs a
+ *     touch larger than a typical geometric sans at the same px size.
+ */
+
+.brand-logo {
+  /* Gotu is single-weight (400); weight contrast is replaced with dual-tone
+     colour. Never synthesize a "bold" — match the designed weight. */
+  font-family: 'Gotu', 'Noto Sans Devanagari', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.15; /* headroom for Devanagari matras + Latin ascenders */
+
+  /* Fluid responsive sizing — no media queries needed */
+  font-size: clamp(1.5rem, 3.5vw + 0.5rem, 2.5rem);
+
+  /* The lockup is one optical unit: leaf + कृषि + Setu. Flex drops the stray
+     whitespace text node between the spans and lets gap handle spacing. */
+  display: inline-flex;
+  align-items: center;
+  column-gap: 0.3em; /* कृषि ⟷ Setu ≈ word space */
+
+  color: #E5A93C; /* primary warm gold — also the leaf / कृषि hue */
+
+  /* Premium text rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Leaf mark — inherits currentColor (gold on dark, ink on light), scales
+   with the lockup via em, and is nudged up ~half a hair so it centres on the
+   shirorekha/ascender band instead of the descender-inclusive line box. */
+.brand-logo .brand-logo-icon {
+  width: 0.82em;
+  height: 0.82em;
+  margin-right: 0.25em; /* ≈ 6.5px at 26px — combined with column-gap ≈ 8–10px */
+  flex-shrink: 0;
+  transform: translateY(-0.04em);
+  color: inherit;
+}
+
+/* Dual-tone contrast */
+.brand-logo .devanagari {
+  color: #E5A93C; /* warm golden hue */
+  font-weight: 400;
+  letter-spacing: 0.01em; /* breathe the conjuncts apart without breaking them */
+}
+
+.brand-logo .latin {
+  color: #F4D06F; /* subtle lighter tint */
+  font-weight: 400;
+  letter-spacing: 0.04em; /* airier — the Latin echo reads light */
+}
+
+/* Light-background variant — deep forest ink with a sage Setu */
+.brand-logo--light {
+  color: #1B3A2B;
+}
+.brand-logo--light .devanagari {
+  color: #1B3A2B;
+}
+.brand-logo--light .latin {
+  color: #46624E;
+}
+
+/* Component size variants */
+.brand-logo--sm { font-size: clamp(1.125rem, 2.5vw + 0.375rem, 1.5rem); }
+.brand-logo--lg { font-size: clamp(2rem, 4.5vw + 0.75rem, 3.5rem); }
