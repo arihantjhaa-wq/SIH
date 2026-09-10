@@ -8,6 +8,8 @@ import WeatherBadges from "../components/WeatherBadges.jsx";
 import ProductPhoto from "../components/ProductPhoto.jsx";
 import StarRow from "../components/StarRow.jsx";
 import ProductCard from "../components/ProductCard.jsx";
+import axios from 'axios';
+
 
 export default function ProductDetailPage({
   product,

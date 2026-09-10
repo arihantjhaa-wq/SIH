@@ -19,20 +19,24 @@ export async function getAdminProducts() {
   return data.data.map(p => ({ ...p, id: p._id }));
 }
 
-export async function createProduct(product) {
-  const { data } = await api.post("/products", {
-    name: product.name,
-    category: product.category,
-    unit: product.unit,
-    photo: product.photo || null,
-    imageData: product.imageData || null,
-    indivPrice: product.indivPrice,
-    bizPrice: product.bizPrice,
-    minBulkQty: product.minBulkQty,
-    farmer: product.farmer,
+export async function createProduct(formData) {
+  // In Axios >= 1.0, passing multipart/form-data allows Axios to properly format the boundary for FormData.
+  const { data } = await api.post("/products", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
   });
   // Map MongoDB _id to id for frontend compatibility
   return { ...data.data, id: data.data._id };
+}
+
+export async function updateProduct(id, formData) {
+  await api.put(`/products/${id}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return true;
 }
 
 export async function deleteProduct(id) {

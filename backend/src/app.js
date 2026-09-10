@@ -7,6 +7,7 @@ const app = express()
 //basic Configuration
 app.use(express.json({limit:"16kb"}));
 app.use(express.urlencoded({extended:true , limit: "16kb"}));
+// Serves both static assets and uploaded product images (uploads/products/...)
 app.use(express.static("public"));
 app.use(cookieParser());
 
@@ -40,6 +41,26 @@ app.use("/api/v1/forecast", forecastRoutes);
 import { ApiError } from './utils/api-error.js';
 
 app.use((err, req, res, next) => {
+    // Multer-specific errors → proper HTTP status codes
+    if (err.code === "INVALID_FILE_TYPE") {
+        return res.status(400).json({
+            statusCode: 400,
+            message: err.message || "Unsupported file type",
+            success: false,
+            errors: [],
+            data: null,
+        });
+    }
+    if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(413).json({
+            statusCode: 413,
+            message: "File too large. Maximum size is 5 MB.",
+            success: false,
+            errors: [],
+            data: null,
+        });
+    }
+
     if (err instanceof ApiError) {
         return res.status(err.statusCode).json({
             statusCode: err.statusCode,

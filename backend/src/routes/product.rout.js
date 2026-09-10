@@ -10,6 +10,7 @@ import {
   deleteProduct,
   seedProducts,
 } from "../controllers/product.controller.js";
+import upload from "../middlewares/upload.middleware.js";
 
 const router = Router();
 
@@ -25,14 +26,14 @@ router.route("/mine").get(verifyJWT, getMyProducts);
 // Developer/Admin: all products with ownership info
 router.route("/admin").get(verifyJWT, getAdminProducts);
 
-// Authenticated farmer: create product
-router.route("/").post(verifyJWT, createProduct);
+// Authenticated farmer: create product with image upload
+router.route("/").post(verifyJWT, upload.single("image"), createProduct);
 
 // Parameterized routes MUST come after specific routes
 router.route("/:id").get(getProductById);
 
-// Authenticated farmer/developer: update product
-router.route("/:id").put(verifyJWT, updateProduct);
+// Authenticated farmer/developer: update product with image upload
+router.route("/:id").put(verifyJWT, upload.single("image"), updateProduct);
 
 // Authenticated farmer/developer: delete product
 router.route("/:id").delete(verifyJWT, deleteProduct);

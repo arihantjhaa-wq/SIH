@@ -5,10 +5,12 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
+
 import {
   getProducts,
   getMyProducts,
   createProduct,
+  updateProduct,
   deleteProduct,
 } from "../services/productService.js";
 
@@ -38,8 +40,8 @@ export function ProductProvider({ children, scope = "all" }) {
     fetchProducts();
   }, [fetchProducts]);
 
-  const addProduct = useCallback(async (product) => {
-    const created = await createProduct(product);
+  const addProduct = useCallback(async (productOrFormData) => {
+    const created = await createProduct(productOrFormData);
     if (created) {
       setProducts((prev) => [created, ...prev]);
     }

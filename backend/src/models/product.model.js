@@ -25,6 +25,10 @@ const productSchema = new Schema(
       type: String,
       default: null,
     },
+    imagePublicId: {
+      type: String,
+      default: null,
+    },
     indivPrice: {
       type: Number,
       required: true,

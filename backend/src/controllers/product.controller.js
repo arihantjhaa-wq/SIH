@@ -2,6 +2,8 @@ import { Product } from "../models/product.model.js";
 import { ApiResponse } from "../utils/api-responce.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
+import upload from "../middlewares/upload.middleware.js";
+import { uploadToCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 
 const SEED_PRODUCTS = [
   { name: "Sona Masoori Rice", category: "Grains", unit: "kg", photo: "rice grain", indivPrice: 62, bizPrice: 42, minBulkQty: 50, farmer: "Ravi Kumar, Nalgonda", farmerAdded: false },
@@ -130,24 +132,39 @@ const getProductById = asyncHandler(async (req, res) => {
 });
 
 const createProduct = asyncHandler(async (req, res) => {
-  const { name, category, unit, photo, imageData, indivPrice, bizPrice, minBulkQty, farmer } = req.body;
+  const { name, category, unit, indivPrice, bizPrice, minBulkQty, farmer } = req.body;
 
   if (!name || !category || !unit || !indivPrice || !bizPrice || !minBulkQty || !farmer) {
     throw new ApiError(400, "Missing required fields");
+  }
+
+  // If an image was uploaded, send it to Cloudinary first.
+  let imageUrl = null;
+  let imagePublicId = null;
+
+  if (req.file) {
+    try {
+      const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype);
+      imageUrl = result.secure_url;
+      imagePublicId = result.public_id;
+    } catch (error) {
+      throw new ApiError(500, "Failed to upload image: " + error.message);
+    }
   }
 
   const product = await Product.create({
     name,
     category,
     unit,
-    photo: photo || null,
-    imageData: imageData || null,
+    photo: imageUrl || null,
+    imageData: imageUrl || null,
+    imagePublicId: imagePublicId || null,
     indivPrice,
     bizPrice,
     minBulkQty,
     farmer,
     farmerAdded: true,
-    // Owner is the authenticated user — never trusted from the client body.
+    // Owner is the authenticated user — never trusted from the client.
     addedBy: req.user._id,
   });
 
@@ -179,7 +196,33 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (bizPrice !== undefined) product.bizPrice = bizPrice;
   if (minBulkQty !== undefined) product.minBulkQty = minBulkQty;
 
+  // Handle image replacement when a new file is uploaded.
+  const oldImagePublicId = product.imagePublicId;
+
+  if (req.file) {
+    try {
+      const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype);
+      product.photo = result.secure_url;
+      product.imageData = result.secure_url;
+      product.imagePublicId = result.public_id;
+    } catch (error) {
+      throw new ApiError(500, "Failed to upload image: " + error.message);
+    }
+  }
+
   await product.save();
+
+  // After the database is safely updated, remove the old Cloudinary asset
+  // if we just replaced an image. Local /uploads/ paths are left untouched
+  // for backward compatibility.
+  if (req.file && oldImagePublicId && !oldImagePublicId.startsWith("/")) {
+    try {
+      await deleteFromCloudinary(oldImagePublicId);
+    } catch (error) {
+      // Non-fatal — the old asset stays on Cloudinary.
+      console.error("Failed to delete old Cloudinary image:", error.message);
+    }
+  }
 
   return res
     .status(200)
@@ -199,6 +242,15 @@ const deleteProduct = asyncHandler(async (req, res) => {
   // returning 404 keeps other users' records hidden.
   if (!canManageProduct(req.user, product)) {
     throw new ApiError(404, "Product not found");
+  }
+
+  // Remove the Cloudinary asset if one exists, before deleting the DB record.
+  if (product.imagePublicId && !product.imagePublicId.startsWith("/")) {
+    try {
+      await deleteFromCloudinary(product.imagePublicId);
+    } catch (error) {
+      console.error("Failed to delete Cloudinary image on product delete:", error.message);
+    }
   }
 
   await product.deleteOne();

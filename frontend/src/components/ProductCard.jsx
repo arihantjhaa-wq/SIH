@@ -2,6 +2,8 @@ import React from "react";
 import { BadgePercent, Sprout, Plus, Minus } from "lucide-react";
 import { discountPct, money, MAX_SAVER_THRESHOLD } from "../utils/marketplace.js";
 import ProductPhoto from "./ProductPhoto.jsx";
+import axios from 'axios';
+
 
 export default function ProductCard({
   product,

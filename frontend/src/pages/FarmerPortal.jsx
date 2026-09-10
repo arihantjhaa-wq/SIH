@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import ProductPhoto from "../components/ProductPhoto.jsx";
 import ForecastAdvisor from "../components/ForecastAdvisor.jsx";
 
+
 const EMPTY_FORM = {
   name: "",
   category: "Grains",
@@ -15,7 +16,8 @@ const EMPTY_FORM = {
   minBulkQty: "",
   farmerName: "",
   location: "",
-  imageData: null,
+  image: null,      // Store the File object (for FormData)
+  imageData: null,  // Base64 preview (for display)
   imageName: "",
 };
 
@@ -84,7 +86,8 @@ export default function FarmerPortal({ onSwitch, onLogout }) {
     reader.onload = () => {
       setForm((f) => ({
         ...f,
-        imageData: reader.result,
+        image: file,          // Store the actual File object
+        imageData: reader.result, // Keep preview data
         imageName: file.name,
       }));
       setErrors((e) => ({ ...e, image: undefined }));
@@ -99,7 +102,7 @@ export default function FarmerPortal({ onSwitch, onLogout }) {
   }
 
   function clearPhoto() {
-    setForm((f) => ({ ...f, imageData: null, imageName: "" }));
+    setForm((f) => ({ ...f, image: null, imageData: null, imageName: "" }));
   }
 
   function validate() {
@@ -130,19 +133,23 @@ export default function FarmerPortal({ onSwitch, onLogout }) {
 
     setSubmitting(true);
     try {
-      const product = {
-        name: form.name.trim(),
-        category: form.category,
-        unit: form.unit,
-        photo: `${form.name} ${form.category}`,
-        imageData: form.imageData || null,
-        indivPrice: Number(form.indivPrice),
-        bizPrice: Number(form.bizPrice),
-        minBulkQty: Number(form.minBulkQty),
-        farmer: `${form.farmerName.trim()}, ${form.location.trim()}`,
-      };
-      await addProduct(product);
-      flashToast(`${product.name} is now live for consumers`);
+      // Build FormData for multipart upload (image sent as a file)
+      const formData = new FormData();
+      formData.append("name", form.name.trim());
+      formData.append("category", form.category);
+      formData.append("unit", form.unit);
+      formData.append("indivPrice", String(Number(form.indivPrice)));
+      formData.append("bizPrice", String(Number(form.bizPrice)));
+      formData.append("minBulkQty", String(Number(form.minBulkQty)));
+      formData.append("farmer", `${form.farmerName.trim()}, ${form.location.trim()}`);
+      // Only attach the file when one was selected — multer tolerates
+      // multipart forms without the file field.
+      if (form.image) {
+        formData.append("image", form.image);
+      }
+
+      await addProduct(formData);
+      flashToast(`${form.name.trim()} is now live for consumers`);
       setForm((f) => ({
         ...EMPTY_FORM,
         farmerName: f.farmerName,
