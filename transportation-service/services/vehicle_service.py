@@ -1,5 +1,4 @@
-from typing import Optional
-from config import settings
+from typing import Optional  # noqa: F401 - kept for potential future use
 
 
 # Vehicle configurations with capacity info (extracted from original CLI)
@@ -57,12 +56,13 @@ def get_vehicle_config(vehicle_id: str) -> dict:
     return VEHICLE_CONFIGS.get(vehicle_id, VEHICLE_CONFIGS["1"])
 
 
-def select_vehicle(quantity_kg: float) -> str:
+def select_vehicle(quantity_kg: float, distance_km: float = None) -> str:
     """
-    Automatically select the smallest suitable vehicle based on quantity.
+    Automatically select the smallest suitable vehicle based on quantity and distance.
 
     Args:
         quantity_kg: Total weight of goods in kg
+        distance_km: Distance in kilometers (optional, used for bike eligibility)
 
     Returns:
         Vehicle ID string ("1", "2", "3", or "4")
@@ -76,8 +76,21 @@ def select_vehicle(quantity_kg: float) -> str:
         key=lambda x: x[1]["capacity_kg"]
     )
 
+    # Determine if distance is available for bike eligibility check
+    distance_available = distance_km is not None and isinstance(distance_km, (int, float))
+
     for vehicle_id, config in sorted_vehicles:
+        # Check weight capacity first
         if quantity_kg <= config["capacity_kg"]:
+            # Special rule for bike (Two-Wheeler): only eligible if distance < 50 km
+            if vehicle_id == "1" and distance_available:
+                if distance_km >= 50:
+                    # Bike not eligible for 50+ km, skip to next vehicle
+                    continue
+            # For bike when distance is not available, use safest existing behavior
+            # (wait for actual calculated distance before deciding bike eligibility)
+            elif vehicle_id == "1" and not distance_available:
+                continue
             return vehicle_id
 
     # If we reach here, quantity exceeds the largest vehicle

@@ -9,7 +9,6 @@ import {
   MapPin,
   Clock,
   Fuel,
-  IndianRupee,
   CheckCircle2,
   AlertCircle,
   Loader2,
@@ -81,18 +80,18 @@ function TransportBreakdown({ shipment }) {
       {/* Route */}
       <div className="px-4 pt-4 pb-2 space-y-2">
         <div className="flex gap-2">
-          <MapPin className="w-3.5 h-3.5 text-[#C9A227] mt-0.5 flex-shrink-0" />
+          <MapPin className="w-3.5 h-3.5 text-[#C9A227] mt-0.5 shrink-0" />
           <div>
             <p className="text-[11px] uppercase tracking-wide text-[#8A8468]">Origin</p>
             <p className="text-sm text-[#2A2820] leading-snug">{t.origin_address}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 pl-[17px] text-[11px] text-[#8A8468]">
+        <div className="flex items-center gap-2 pl-4 text-[11px] text-[#8A8468]">
           <span className="w-px h-4 bg-[#E4D6A7]" />
           <span className="tabular">{t.distance_display} • {t.active_travel_display}</span>
         </div>
         <div className="flex gap-2">
-          <MapPin className="w-3.5 h-3.5 text-[#1B3A2B] mt-0.5 flex-shrink-0" />
+          <MapPin className="w-3.5 h-3.5 text-[#1B3A2B] mt-0.5 shrink-0" />
           <div>
             <p className="text-[11px] uppercase tracking-wide text-[#8A8468]">Destination</p>
             <p className="text-sm text-[#2A2820] leading-snug">{t.destination_address}</p>
@@ -408,8 +407,8 @@ export default function CartPage({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-4">
+        <div className="space-y-6">
+          <div className="space-y-4">
             {cartLines.map(({ product, qty }) => (
               <div
                 key={product.id}
@@ -455,50 +454,28 @@ export default function CartPage({
             ))}
           </div>
 
-          <div className="space-y-4">
-            {/* Order summary */}
-            <div className="border border-[#E4D6A7] bg-[#FBF7EC] p-4">
-              <h2 className="ff-display text-lg mb-3 flex items-center gap-2">
-                <Package className="w-4 h-4 text-[#1B3A2B]" /> Summary
-              </h2>
-              <div className="text-sm space-y-1">
-                {(() => {
-                  // Prefer authoritative server totals when available
-                  const t = transport?.totals;
-                  const s = bizUnlockedSavings;
-                  if (t && !transportLoading && !transportError) {
-                    return (
-                      <>
-                        <div className="flex justify-between tabular">
-                          <span className="text-[#5C5842]">Products</span>
-                          <span>{money(t.productSubtotal)}</span>
-                        </div>
-                        <div className="flex justify-between tabular">
-                          <span className="text-[#5C5842] flex items-center gap-1">
-                            <Truck className="w-3 h-3" /> Transportation
-                          </span>
-                          <span>{money(t.transportationTotal)}</span>
-                        </div>
-                        {s && (
-                          <div className="flex justify-between tabular text-[#1B3A2B]">
-                            <span>Business savings</span>
-                            <span>− {money(savings)}</span>
-                          </div>
-                        )}
-                        <div className="border-t border-[#E4D6A7] my-2" />
-                        <div className="flex justify-between tabular font-medium text-[#1B3A2B]">
-                          <span>Order Total</span>
-                          <span>{money(t.grandTotal)}</span>
-                        </div>
-                      </>
-                    );
-                  }
-                  // Fallback while transport loads/errors
+          {/* Order summary */}
+          <div className="border border-[#E4D6A7] bg-[#FBF7EC] p-4">
+            <h2 className="ff-display text-lg mb-3 flex items-center gap-2">
+              <Package className="w-4 h-4 text-[#1B3A2B]" /> Summary
+            </h2>
+            <div className="text-sm space-y-1">
+              {(() => {
+                // Prefer authoritative server totals when available
+                const t = transport?.totals;
+                const s = bizUnlockedSavings;
+                if (t && !transportLoading && !transportError) {
                   return (
                     <>
                       <div className="flex justify-between tabular">
-                        <span className="text-[#5C5842]">Subtotal</span>
-                        <span>{money(subtotal)}</span>
+                        <span className="text-[#5C5842]">Products</span>
+                        <span>{money(t.productSubtotal)}</span>
+                      </div>
+                      <div className="flex justify-between tabular">
+                        <span className="text-[#5C5842] flex items-center gap-1">
+                          <Truck className="w-3 h-3" /> Transportation
+                        </span>
+                        <span>{money(t.transportationTotal)}</span>
                       </div>
                       {s && (
                         <div className="flex justify-between tabular text-[#1B3A2B]">
@@ -506,101 +483,121 @@ export default function CartPage({
                           <span>− {money(savings)}</span>
                         </div>
                       )}
-                      {!transportLoading && !transportError && hasLines && (
-                        <p className="text-xs text-[#8A8468] pt-1">
-                          Fresh delivery quote is being calculated…
-                        </p>
-                      )}
+                      <div className="border-t border-[#E4D6A7] my-2" />
+                      <div className="flex justify-between tabular font-medium text-[#1B3A2B]">
+                        <span>Order Total</span>
+                        <span>{money(t.grandTotal)}</span>
+                      </div>
                     </>
                   );
-                })()}
-              </div>
-
-              <div className="flex items-center gap-1.5 text-xs text-[#5C5842] pt-2">
-                <Truck className="w-3.5 h-3.5" />
-                {isBusiness ? "Freight quoted at checkout for bulk orders" : "Delivered within 2 days"}
-              </div>
-
-              {orderError && (
-                <div className="mt-3 border border-[#F0A5A5] bg-[#FFF5F5] px-3 py-2 text-xs text-[#C4544A]">
-                  {orderError}
-                </div>
-              )}
-
-              <button
-                onClick={handlePlaceOrder}
-                disabled={placingOrder || !!transportError}
-                title={transportError ? "Fix the delivery issue before placing the order" : undefined}
-                className="w-full mt-4 py-2.5 bg-[#1B3A2B] text-[#F3ECDD] text-sm hover:bg-[#14140F] active:bg-[#0E1F17] transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {placingOrder ? (
+                }
+                // Fallback while transport loads/errors
+                return (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Placing order…
+                    <div className="flex justify-between tabular">
+                      <span className="text-[#5C5842]">Subtotal</span>
+                      <span>{money(subtotal)}</span>
+                    </div>
+                    {s && (
+                      <div className="flex justify-between tabular text-[#1B3A2B]">
+                        <span>Business savings</span>
+                        <span>− {money(savings)}</span>
+                      </div>
+                    )}
+                    {!transportLoading && !transportError && hasLines && (
+                      <p className="text-xs text-[#8A8468] pt-1">
+                        Fresh delivery quote is being calculated…
+                      </p>
+                    )}
                   </>
-                ) : (
-                  "Proceed to checkout"
-                )}
-              </button>
-
-              <p className="text-[11px] text-center text-[#8A8468] mt-2">
-                Price and delivery are revalidated with the server before your order is confirmed.
-              </p>
+                );
+              })()}
             </div>
 
-            {/* Delivery & Transportation (per-shipment breakdown) */}
-            <section>
-              <h2 className="ff-display text-lg mb-3 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-[#1B3A2B]" />
-                Delivery & Transportation
-              </h2>
+            <div className="flex items-center gap-1.5 text-xs text-[#5C5842] pt-2">
+              <Truck className="w-3.5 h-3.5" />
+              {isBusiness ? "Freight quoted at checkout for bulk orders" : "Delivered within 2 days"}
+            </div>
 
-              {transportLoading && <TransportLoadingState />}
+            {orderError && (
+              <div className="mt-3 border border-[#F0A5A5] bg-[#FFF5F5] px-3 py-2 text-xs text-[#C4544A]">
+                {orderError}
+              </div>
+            )}
 
-              {!transportLoading && transportError && (
-                <TransportErrorState message={transportError} onRetry={fetchPreview} />
+            <button
+              onClick={handlePlaceOrder}
+              disabled={placingOrder || !!transportError}
+              title={transportError ? "Fix the delivery issue before placing the order" : undefined}
+              className="w-full mt-4 py-2.5 bg-[#1B3A2B] text-[#F3ECDD] text-sm hover:bg-[#14140F] active:bg-[#0E1F17] transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {placingOrder ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Placing order…
+                </>
+              ) : (
+                "Proceed to checkout"
               )}
+            </button>
 
-              {!transportLoading && !transportError && transport?.shipments && (
-                <div className="space-y-4">
-                  {transport.shipments.length > 1 && (
-                    <p className="text-xs text-[#5C5842]">
-                      Your cart has products from {transport.shipments.length} farmers — quoted separately per pickup location.
-                    </p>
-                  )}
-                  {transport.shipments.map((shipment, idx) => (
-                    <TransportBreakdown key={`${shipment.farmerId || idx}`} shipment={shipment} />
-                  ))}
-
-                  {/* Grand pricing footer (separate from Transportation Service boundary) */}
-                  <div className="border border-[#E4D6A7] bg-[#FBF7EC] p-4 text-sm">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-[#8A8468] mb-2">
-                      Pricing Overview
-                    </h3>
-                    <div className="space-y-1 tabular">
-                      <div className="flex justify-between">
-                        <span className="text-[#5C5842]">Products</span>
-                        <span>{money(transport.totals?.productSubtotal ?? subtotal)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#5C5842]">Transportation</span>
-                        <span>{money(transport.totals?.transportationTotal ?? 0)}</span>
-                      </div>
-                      <div className="border-t border-[#E4D6A7] my-2" />
-                      <div className="flex justify-between font-medium text-[#1B3A2B]">
-                        <span>Final Buyer Price</span>
-                        <span>{money(transport.totals?.grandTotal ?? subtotal)}</span>
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-[#8A8468] mt-3 leading-relaxed">
-                      Product prices (incl. platform fee and farmer floor) are authoritative from the marketplace pricing logic.
-                      Transportation cost is calculated by the Transportation Service and shown separately.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </section>
+            <p className="text-[11px] text-center text-[#8A8468] mt-2">
+              Price and delivery are revalidated with the server before your order is confirmed.
+            </p>
           </div>
+
+          {/* Delivery & Transportation (per-shipment breakdown) */}
+          <section>
+            <h2 className="ff-display text-lg mb-3 flex items-center gap-2">
+              <Truck className="w-4 h-4 text-[#1B3A2B]" />
+              Delivery & Transportation
+            </h2>
+
+            {transportLoading && <TransportLoadingState />}
+
+            {!transportLoading && transportError && (
+              <TransportErrorState message={transportError} onRetry={fetchPreview} />
+            )}
+
+            {!transportLoading && !transportError && transport?.shipments && (
+              <div className="space-y-4">
+                {transport.shipments.length > 1 && (
+                  <p className="text-xs text-[#5C5842]">
+                    Your cart has products from {transport.shipments.length} farmers — quoted separately per pickup location.
+                  </p>
+                )}
+                {transport.shipments.map((shipment, idx) => (
+                  <TransportBreakdown key={`${shipment.farmerId || idx}`} shipment={shipment} />
+                ))}
+
+                {/* Grand pricing footer (separate from Transportation Service boundary) */}
+                <div className="border border-[#E4D6A7] bg-[#FBF7EC] p-4 text-sm">
+                  <h3 className="text-xs font-medium uppercase tracking-wide text-[#8A8468] mb-2">
+                    Pricing Overview
+                  </h3>
+                  <div className="space-y-1 tabular">
+                    <div className="flex justify-between">
+                      <span className="text-[#5C5842]">Products</span>
+                      <span>{money(transport.totals?.productSubtotal ?? subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#5C5842]">Transportation</span>
+                      <span>{money(transport.totals?.transportationTotal ?? 0)}</span>
+                    </div>
+                    <div className="border-t border-[#E4D6A7] my-2" />
+                    <div className="flex justify-between font-medium text-[#1B3A2B]">
+                      <span>Final Buyer Price</span>
+                      <span>{money(transport.totals?.grandTotal ?? subtotal)}</span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-[#8A8468] mt-3 leading-relaxed">
+                    Product prices (incl. platform fee and farmer floor) are authoritative from the marketplace pricing logic.
+                    Transportation cost is calculated by the Transportation Service and shown separately.
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       )}
     </main>

@@ -13,11 +13,14 @@ app.use(cookieParser());
 
 //CORS Configuration
 app.use(cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+        : ["http://localhost:5173", "http://127.0.0.1:5173"],
     credentials: true,
-    methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
-    allowedHeaders: ["Content-Type","Authorization"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
 
 import healthcheackRoutes from './routes/healthcheack.rout.js'
 app.use("/api/v1/healthcheck", healthcheackRoutes)

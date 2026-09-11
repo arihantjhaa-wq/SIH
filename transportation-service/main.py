@@ -184,18 +184,7 @@ def calculate_transport_route(request: TransportRouteRequest):
     else:
         departure_dt = datetime.now()
 
-    # 1. Automatic vehicle selection
-    try:
-        vehicle_id = select_vehicle(request.quantity_kg)
-    except VehicleCapacityError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
-
-    vehicle_config = get_vehicle_config(vehicle_id)
-
-    # 2. Call Google Maps Directions API
+    # 1. Call Google Maps Directions API to get distance
     try:
         route_data = get_route_from_google_maps(
             request.origin_address, request.destination_address, departure_dt
@@ -208,6 +197,17 @@ def calculate_transport_route(request: TransportRouteRequest):
 
     distance_km = route_data["distance_km"]
     traffic_seconds = route_data["duration_seconds"]
+
+    # 2. Automatic vehicle selection (with distance for bike eligibility)
+    try:
+        vehicle_id = select_vehicle(request.quantity_kg, distance_km)
+    except VehicleCapacityError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+    vehicle_config = get_vehicle_config(vehicle_id)
 
     # 3. Calculate logistics costs
     cost_data = calculate_logistics_cost(distance_km, vehicle_id)
