@@ -1,33 +1,104 @@
-# Kheti Seedha
+# Frontend Project
 
-A farm-to-door marketplace: farmers list produce, households buy at fair prices,
-and registered businesses unlock bulk rates with a valid GSTIN.
+This project uses shadcn/ui components with Tailwind CSS and TypeScript.
 
-## Setup
+## Setup Instructions
+
+### 1. Install Dependencies
 
 ```bash
+# Navigate to the frontend directory
+# Then run:
 npm install
-npm run dev
+"
+"  "motion": "^11.0.0",
+  "framer-motion": "^11.0.0",
+  "lucide-react": "^0.263.1"
+""
+
+### 2. Project Structure
+
+The project follows shadcn/ui conventions:
+
+```
+src/
+├── components/
+│   └── ui/              # UI component directory
+│       ├── dancing-letters.jsx  # Animated letters component
+│       └── sign-in-card-2.jsx    # Login card component
+├── lib/                  # Utility functions
+│   └── utils.js
+├── context/             # React contexts
+├── hooks/              # Custom hooks
+├── pages/              # Page components
+└── components/         # Regular components
 ```
 
-Then open the printed local URL (usually http://localhost:5173).
+### 3. Component Paths
 
-## Build for production
+The `components/ui` directory is the standard location for UI components in shadcn/ui projects:
+
+- **Default path**: `/src/components/ui/`
+- **Why this folder matters**: This is the conventional location for reusable UI components, making them easily discoverable and importable across the application.
+
+### 4. Tailwind CSS Setup
+
+Tailwind CSS is already configured:
+- Configured via `@tailwindcss/vite` in `vite.config.js`
+- Base styles in `src/index.css`
+- Custom components with `className` utilities
+
+### 5. TypeScript Support
+
+The project uses TypeScript. All components include type definitions:
+
+```tsx
+interface DancingLettersProps {
+  text?: string;
+  className?: string;
+  letterClassName?: string;
+  autoPlay?: boolean;
+  autoPlayInterval?: number;
+}
+```
+
+### 6. Available Components
+
+#### DancingLetters
+A component that creates animated, physics-based letter effects with hover interactions. It's perfect for headers, logos, or any text that needs to be engaging.
+
+**Usage**: 
+```tsx
+import DancingLetters from "@/components/ui/dancing-letters";
+
+<DancingLetters text="ANIMATE" />
+```
+
+#### SignInCard2
+A modern, glassmorphic login card with 3D hover effects, animated light beams, and a beautiful gradient background. Supports email/password login and Google authentication.
+
+**Usage**:
+```tsx
+import { Component } from "@/components/ui/sign-in-card-2";
+
+<Component />
+```
+
+### 7. Development
 
 ```bash
-npm run build
-npm run preview
+npm run dev    # Start development server
+npm run build  # Build for production
+npm run preview # Preview production build
 ```
 
-## Structure
+### 8. Integration Notes
 
-- `src/App.jsx` — mounts the marketplace
-- `src/FarmMarketplace.jsx` — the whole app: role picker, farmer portal, consumer marketplace, cart
-- `src/index.css` — Tailwind entry point (Tailwind v4, loaded via `@tailwindcss/vite`)
-- `src/main.jsx` — React root
+The components are ready to be used in your application. They include:
+- responsive design
+- hover and interaction states
+- smooth animations
+- accessibility features
+- proper TypeScript typing
 
-## Notes
-
-- Product photos are pulled by keyword from a free, key-less photo service at runtime — an
-  internet connection is needed to see images, and you can swap in your own image URLs/CDN later.
-- Farmer-published listings live in React state only (no backend), so they reset on page reload.
+Simply import them where needed and start building!

@@ -1,44 +1,57 @@
 import React from "react";
 import { Leaf, Sprout, Store } from "lucide-react";
+import { motion } from "framer-motion";
+import DancingLetters from "../components/ui/dancing-letters";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 export default function RoleGate({ onSelect, onLogout }) {
   return (
     <div
-      className="min-h-screen w-full bg-[#14140F] text-[#F3ECDD] flex items-center justify-center px-5"
+      className="min-h-screen w-full bg-[#14140F] text-[#F3ECDD] flex flex-col items-center px-5"
       style={{
         fontFamily: "'Work Sans', ui-sans-serif, system-ui, sans-serif",
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Gotu:wght@400&family=Work+Sans:wght@400;500;600&display=swap');
         .ff-display { font-family: 'Fraunces', ui-serif, Georgia, serif; }
+        .ff-gotu { font-family: 'Gotu', 'Noto Sans Devanagari', sans-serif; }
       `}</style>
 
-      <div className="max-w-3xl w-full py-16">
-        <div className="flex items-center gap-2.5 justify-center mb-3">
-          <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
+      {/* Heading — centered vertically between top of page and the paragraph below */}
+      <div className="flex items-center justify-center w-full max-w-3xl pt-[7.875rem] pb-8">
+        <motion.h1 className="flex items-center justify-center gap-3">
+          <Leaf className="w-6 h-6 text-[#E5A93C] shrink-0" strokeWidth={1.75} />
           <span className="brand-logo">
-            <span className="devanagari">कृषि</span>{" "}
-            <span className="latin">Setu</span>
+            <DancingLetters
+              text="कृषि Setu"
+              className="inline-flex items-center"
+              getLetterColorClass={(grapheme) =>
+                /\p{Script=Devanagari}/u.test(grapheme)
+                  ? "ff-gotu text-[#E5A93C] tracking-[0.01em]"
+                  : "ff-gotu text-[#F4D06F] tracking-[0.04em]"
+              }
+            />
           </span>
-        </div>
-        <h1 className="ff-display text-3xl sm:text-4xl text-center leading-[1.15]">
-          Who's joining today?
-        </h1>
-        <p className="text-center text-[15px] text-[#C9C3AE] mt-3 max-w-md mx-auto">
+        </motion.h1>
+      </div>
+
+      <div className="max-w-3xl w-full text-center">
+        <p className="text-center text-[15px] text-[#C9C3AE] max-w-md mx-auto">
           Farmers list what they've harvested. Households and businesses buy it
           direct — no middlemen.
         </p>
         {onLogout && (
-          <button
+          <LiquidButton
+            label="Log out"
             onClick={onLogout}
-            className="block mx-auto mt-4 text-xs text-[#8A8468] hover:text-[#C9A227] transition-colors"
-          >
-            Log out
-          </button>
+            size="xs"
+            decor={false}
+            className="mx-auto mt-4 bg-transparent text-[#8A8468] hover:text-[#C9A227] hover:bg-transparent"
+          />
         )}
 
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 gap-5 pb-10">
           <button
             onClick={() => onSelect("farmer")}
             className="group text-left border border-[#33301F] bg-[#1D1C14] hover:border-[#C9A227] transition-colors p-6"

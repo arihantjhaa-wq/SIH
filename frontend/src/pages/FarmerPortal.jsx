@@ -7,6 +7,8 @@ import { useAuth } from "../context/AuthContext.jsx";
 import ProductPhoto from "../components/ProductPhoto.jsx";
 import ForecastAdvisor from "../components/ForecastAdvisor.jsx";
 import ProfileButton from "../components/ProfileButton.jsx";
+import DancingLetters from "../components/ui/dancing-letters";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 
 const EMPTY_FORM = {
@@ -192,8 +194,15 @@ export default function FarmerPortal({ onSwitch, onLogout }) {
             <div className="flex items-center gap-2.5">
               <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
               <span className="brand-logo">
-                <span className="devanagari">कृषि</span>{" "}
-                <span className="latin">Setu</span>
+                <DancingLetters
+                  text="कृषि Setu"
+                  className="inline-flex items-center"
+                  getLetterColorClass={(grapheme) =>
+                    /\p{Script=Devanagari}/u.test(grapheme)
+                      ? "ff-gotu text-[#E5A93C] tracking-[0.01em]"
+                      : "ff-gotu text-[#F4D06F] tracking-[0.04em]"
+                  }
+                />
               </span>
               <span className="ml-2 text-[11px] uppercase tracking-wide border border-[#C9A227] text-[#C9A227] px-2 py-0.5">
                 Farmer portal
@@ -330,13 +339,13 @@ export default function FarmerPortal({ onSwitch, onLogout }) {
                   <p className="text-xs text-[#5C5842] truncate">
                     {form.imageName}
                   </p>
-                  <button
-                    type="button"
+                  <LiquidButton
+                    label="Remove photo"
                     onClick={clearPhoto}
-                    className="text-xs text-[#8C2E33] hover:text-[#6B1E2B] mt-1"
-                  >
-                    Remove photo
-                  </button>
+                    size="xs"
+                    decor={false}
+                    className="bg-transparent text-[#8C2E33] hover:text-[#6B1E2B] hover:bg-transparent"
+                  />
                 </div>
               </div>
             ) : (
@@ -358,13 +367,12 @@ export default function FarmerPortal({ onSwitch, onLogout }) {
             </p>
           </Field>
 
-          <button
+          <LiquidButton
+            label={submitting ? "Publishing…" : "Publish product"}
             type="submit"
             disabled={submitting}
-            className="w-full mt-4 py-2.5 bg-[#1B3A2B] text-[#F3ECDD] text-sm hover:bg-[#14140F] active:bg-[#0E1F17] transition-colors disabled:opacity-60"
-          >
-            {submitting ? "Publishing…" : "Publish product"}
-          </button>
+            className="w-full mt-4"
+          />
 
           {/* AI Advisor Widget */}
           <div className="mt-6">
@@ -430,12 +438,14 @@ export default function FarmerPortal({ onSwitch, onLogout }) {
                     <p className="text-xs tabular text-[#8A6D1E]">
                       {money(p.bizPrice)} bulk · min {p.minBulkQty} {p.unit}
                     </p>
-                    <button
+                    <LiquidButton
+                      label="Remove listing"
+                      icon={<Trash2 className="w-3.5 h-3.5" />}
                       onClick={() => handleRemove(p.id, p.name)}
-                      className="mt-auto pt-2 flex items-center gap-1 text-xs text-[#8C2E33] hover:text-[#6B1E2B]"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Remove listing
-                    </button>
+                      size="xs"
+                      decor={false}
+                      className="mt-auto bg-transparent text-[#8C2E33] hover:text-[#6B1E2B] hover:bg-transparent"
+                    />
                   </div>
                 </div>
               ))}
@@ -447,9 +457,14 @@ export default function FarmerPortal({ onSwitch, onLogout }) {
       {toast && (
         <div className="fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#14140F] text-[#F3ECDD] text-sm px-4 py-2.5 flex items-center gap-2 shadow-lg border border-[#C9A227]/40 z-50">
           {toast}
-          <button onClick={() => setToast(null)}>
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <LiquidButton
+            icon={<X className="w-3.5 h-3.5" />}
+            onClick={() => setToast(null)}
+            aria-label="Dismiss"
+            size="xs"
+            decor={false}
+            className="ml-2 w-6 h-6 px-0 bg-[#2A2825] hover:bg-[#3A382F]"
+          />
         </div>
       )}
     </div>

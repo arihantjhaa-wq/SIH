@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, LogOut, LayoutDashboard, ChevronDown, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { LiquidButton } from "./ui/liquid-glass-button";
 
 function initialsFor(user) {
   const src = (user?.name || user?.username || user?.email || "?").trim();
@@ -107,57 +108,66 @@ export default function ProfileButton({ user: propUser, onSwitch, onLogout }) {
               <p className="text-sm font-medium text-[#14140F] truncate">{displayName}</p>
               <p className="text-xs text-[#5C5842] truncate">{user?.email || "No email on file"}</p>
             </div>
-            <button
-              type="button"
+            <LiquidButton
+              icon={<X className="w-4 h-4" />}
               onClick={() => setOpen(false)}
               aria-label="Close menu"
-              className="ml-auto p-1 text-[#8A8468] hover:text-[#1B3A2B]"
-            >
-              <X className="w-4 h-4" />
-            </button>
+              size="xs"
+              decor={false}
+              className="ml-auto w-6 h-6 px-0"
+            />
           </div>
 
           <div className="py-1">
-            <button
-              type="button"
-              role="menuitem"
+            <LiquidButton
+              label={
+                <span className="flex items-center gap-2">
+                  <User className="w-4 h-4" /> Profile
+                </span>
+              }
               onClick={() => {
                 setOpen(false);
                 navigate("/profile");
               }}
-              className="w-full text-left px-4 py-2.5 text-sm text-[#2A2820] hover:bg-[#FBF7EC] flex items-center gap-2 focus-visible:outline-none focus-visible:bg-[#FBF7EC]"
-            >
-              <User className="w-4 h-4 text-[#5C5842]" /> Profile
-            </button>
+              size="xs"
+              decor={false}
+              className="w-full justify-start rounded-none bg-transparent hover:bg-[#FBF7EC]"
+            />
 
             {onSwitch && (
-              <button
-                type="button"
-                role="menuitem"
+              <LiquidButton
+                label={
+                  <span className="flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4" /> Switch role
+                  </span>
+                }
                 onClick={() => {
                   setOpen(false);
                   onSwitch();
                 }}
-                className="w-full text-left px-4 py-2.5 text-sm text-[#2A2820] hover:bg-[#FBF7EC] flex items-center gap-2 focus-visible:outline-none focus-visible:bg-[#FBF7EC]"
-              >
-                <LayoutDashboard className="w-4 h-4 text-[#5C5842]" /> Switch role
-              </button>
+                size="xs"
+                decor={false}
+                className="w-full justify-start rounded-none bg-transparent hover:bg-[#FBF7EC]"
+              />
             )}
 
             {onLogout && (
               <>
                 <div className="mx-3 my-1 border-t border-[#F0E6C5]" />
-                <button
-                  type="button"
-                  role="menuitem"
+                <LiquidButton
+                  label={
+                    <span className="flex items-center gap-2">
+                      <LogOut className="w-4 h-4" /> Log out
+                    </span>
+                  }
                   onClick={() => {
                     setOpen(false);
                     onLogout();
                   }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-[#7A2A22] hover:bg-[#FFF5F5] flex items-center gap-2 focus-visible:outline-none focus-visible:bg-[#FFF5F5]"
-                >
-                  <LogOut className="w-4 h-4" /> Log out
-                </button>
+                  size="xs"
+                  decor={false}
+                  className="w-full justify-start rounded-none bg-transparent hover:bg-[#FFF5F5] text-[#7A2A22]"
+                />
               </>
             )}
           </div>

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Leaf } from "lucide-react";
+import DancingLetters from "./ui/dancing-letters";
 
 /**
  * कृषि Setu — reusable branded logo lockup (Gotu display typeface).
@@ -20,14 +21,32 @@ export default function BrandLogo({ to, size = "md", dark = false, className = "
   const sizeClass =
     size === "sm" ? "brand-logo--sm" : size === "lg" ? "brand-logo--lg" : "";
 
+  // Keep the lockup's original dual-tone palette per script (devanagari कृषि /
+  // latin Setu), switching to the ink variant when `dark` is true. Both scripts
+  // stay on Gotu so the letterforms match the static lockup exactly.
+  const letterColorClass = (grapheme) => {
+    const isDevanagari = /\p{Script=Devanagari}/u.test(grapheme);
+    if (dark) {
+      return isDevanagari
+        ? "ff-gotu text-[#1B3A2B] tracking-[0.01em]"
+        : "ff-gotu text-[#46624E] tracking-[0.04em]";
+    }
+    return isDevanagari
+      ? "ff-gotu text-[#E5A93C] tracking-[0.01em]"
+      : "ff-gotu text-[#F4D06F] tracking-[0.04em]";
+  };
+
   const inner = (
     <span
       className={`brand-logo whitespace-nowrap${dark ? " brand-logo--light" : ""}${sizeClass ? ` ${sizeClass}` : ""}`}
       data-size={size}
     >
       <Leaf className="brand-logo-icon" strokeWidth={1.6} aria-hidden="true" />
-      <span className="devanagari">कृषि</span>
-      <span className="latin">Setu</span>
+      <DancingLetters
+        text="कृषि Setu"
+        className="inline-flex items-center"
+        getLetterColorClass={letterColorClass}
+      />
     </span>
   );
 

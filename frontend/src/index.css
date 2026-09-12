@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+@theme {
+  /* LiquidButton / shadcn theme tokens */
+  --color-primary: #1B3A2B;
+  --color-primary-foreground: #F3ECDD;
+  --color-secondary: #D8CBA1;
+  --color-secondary-foreground: #14140F;
+  --color-destructive: #C4544A;
+  --color-destructive-foreground: #F3ECDD;
+  --color-accent: #FBF7EC;
+  --color-accent-foreground: #1B3A2B;
+  --color-background: #F3ECDD;
+  --color-foreground: #2A2820;
+  --color-input: #D8CBA1;
+  --color-ring: #C9A227;
+  --color-muted: #E4D6A7;
+  --color-muted-foreground: #8A8468;
+}
+
 /* ─── Brand Lockup: कृषि Setu ───
  * Typeface: Gotu (Ek Type) — a Devanagari + Latin display serif with
  * characterful hook terminals. Loaded via <link> in index.html.

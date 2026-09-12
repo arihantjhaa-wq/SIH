@@ -28,6 +28,8 @@ import ConsumerToggle from "../components/ConsumerToggle.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 import CartPage from "./CartPage.jsx";
 import ProductDetailPage from "./ProductDetailPage.jsx";
+import DancingLetters from "../components/ui/dancing-letters";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 export default function ConsumerMarketplace({ onSwitch, onLogout }) {
   const { products: allProducts, loading, error } = useProducts();
@@ -263,8 +265,15 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
             <div className="flex items-center gap-2.5">
               <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
               <span className="brand-logo">
-                <span className="devanagari">कृषि</span>{" "}
-                <span className="latin">Setu</span>
+                <DancingLetters
+                  text="कृषि Setu"
+                  className="inline-flex items-center"
+                  getLetterColorClass={(grapheme) =>
+                    /\p{Script=Devanagari}/u.test(grapheme)
+                      ? "ff-gotu text-[#E5A93C] tracking-[0.01em]"
+                      : "ff-gotu text-[#F4D06F] tracking-[0.04em]"
+                  }
+                />
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-3">
@@ -339,13 +348,12 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                     className="flex-1 border border-[#4A4630] bg-[#14140F] text-[#F3ECDD] px-3 py-2 text-sm tracking-wide outline-none focus:border-[#C9A227]"
                     disabled={gstVerifying}
                   />
-                  <button
+                  <LiquidButton
+                    label={gstVerifying ? "Verifying..." : "Verify"}
                     onClick={handleVerifyGstin}
                     disabled={gstVerifying || !gstin || gstin.length !== 15}
-                    className="px-4 py-2 bg-[#C9A227] text-[#14140F] text-sm font-medium hover:bg-[#D4AE3D] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {gstVerifying ? "Verifying..." : "Verify"}
-                  </button>
+                    size="sm"
+                  />
                 </div>
 
                 {/* Verification Status Messages */}
@@ -409,12 +417,13 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                         <p className="text-xs text-[#C9A227]">
                           GST verification service is temporarily unavailable.
                         </p>
-                        <button
+                        <LiquidButton
+                          label="Retry verification"
                           onClick={handleVerifyGstin}
-                          className="mt-1 text-xs text-[#C9A227] underline hover:text-[#D4AE3D]"
-                        >
-                          Retry verification
-                        </button>
+                          size="xs"
+                          decor={false}
+                          className="mt-1 bg-transparent text-[#C9A227] underline hover:text-[#D4AE3D] hover:bg-transparent"
+                        />
                       </div>
                     </div>
                   </div>
@@ -431,13 +440,14 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                 {/* Developer Demo Button */}
                 {isDeveloper && (
                   <div className="mt-3 pt-3 border-t border-[#33301F]">
-                    <button
+                    <LiquidButton
+                      label="Use Developer Demo GSTIN"
                       onClick={handleUseDeveloperDemo}
                       disabled={gstVerifying}
-                      className="w-full px-3 py-2 text-xs border border-[#8A8468] text-[#8A8468] hover:border-[#C9A227] hover:text-[#C9A227] transition-colors disabled:opacity-40"
-                    >
-                      Use Developer Demo GSTIN
-                    </button>
+                      size="xs"
+                      decor={false}
+                      className="w-full bg-transparent text-[#8A8468] hover:text-[#C9A227] hover:bg-transparent"
+                    />
                   </div>
                 )}
               </div>
@@ -459,13 +469,15 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                 className="w-full border border-[#D8CBA1] bg-white pl-9 pr-9 py-2 text-sm outline-none focus:border-[#1B3A2B] placeholder:text-[#8A8468]"
               />
               {search && (
-                <button
+                <LiquidButton
+                  icon={<X className="w-4 h-4" />}
                   onClick={() => setSearch("")}
                   aria-label="Clear search"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8A8468] hover:text-[#1B3A2B]"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                  size="xs"
+                  decor={false}
+                  className="absolute right-2.5 top-1/2 w-7 h-7 px-0 bg-transparent text-[#8A8468] hover:text-[#1B3A2B] hover:bg-transparent"
+                  style={{ transform: "translateY(-50%)" }}
+                />
               )}
             </div>
           </section>
@@ -474,26 +486,22 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
             {categories.map((c) => {
               const active = category === c;
               return (
-                <button
+                <LiquidButton
                   key={c}
+                  label={c}
                   onClick={() => setCategory(c)}
                   aria-pressed={active}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
-                    active
-                      ? "bg-[#1B3A2B] border-[#1B3A2B] text-[#F3ECDD] shadow-[inset_0_0_0_1px_#C9A227]"
-                      : "bg-transparent border-[#D8CBA1] text-[#5C5842] hover:border-[#1B3A2B] hover:text-[#1B3A2B]"
-                  }`}
-                >
-                  {active && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" />
-                  )}
-                  {c}
-                </button>
+                  size="sm"
+                  decor={false}
+                  className={active ? "bg-[#1B3A2B] text-[#F3ECDD]" : "bg-transparent text-[#5C5842] hover:text-[#1B3A2B] hover:bg-transparent"}
+                />
               );
             })}
 
             {isBusiness && (
-              <button
+              <LiquidButton
+                label="Max Saver deals only"
+                icon={<BadgePercent className="w-4 h-4" />}
                 onClick={() => setMaxSaverOnly((v) => !v)}
                 disabled={!bizUnlocked}
                 aria-pressed={maxSaverOnly}
@@ -502,15 +510,12 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
                     ? "Verify your GSTIN to use Max Saver"
                     : undefined
                 }
-                className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 text-sm border transition-colors ${
-                  maxSaverOnly
-                    ? "bg-[#C9A227] border-[#C9A227] text-[#14140F] shadow-[inset_0_0_0_1px_#14140F]"
-                    : "bg-transparent border-[#C9A227] text-[#8A6D1E]"
-                } ${!bizUnlocked ? "opacity-40 cursor-not-allowed" : "hover:bg-[#C9A227]/15"}`}
-              >
-                <BadgePercent className="w-4 h-4" />
-                Max Saver deals only
-              </button>
+                size="sm"
+                decor={false}
+                className={maxSaverOnly
+                  ? "bg-[#C9A227] text-[#14140F]"
+                  : "bg-transparent text-[#8A6D1E] hover:bg-transparent hover:text-[#C9A227]" + (!bizUnlocked ? " opacity-40 cursor-not-allowed" : "")}
+              />
             )}
           </section>
         </div>
@@ -602,9 +607,14 @@ export default function ConsumerMarketplace({ onSwitch, onLogout }) {
       {toast && (
         <div className="fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#14140F] text-[#F3ECDD] text-sm px-4 py-2.5 flex items-center gap-2 shadow-lg border border-[#C9A227]/40 z-50">
           {toast}
-          <button onClick={() => setToast(null)}>
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <LiquidButton
+            icon={<X className="w-3.5 h-3.5" />}
+            onClick={() => setToast(null)}
+            aria-label="Dismiss"
+            size="xs"
+            decor={false}
+            className="ml-2 w-6 h-6 px-0 bg-[#2A2825] hover:bg-[#3A382F]"
+          />
         </div>
       )}
     </div>

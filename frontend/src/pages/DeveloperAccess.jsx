@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Leaf, ArrowLeft, Code } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import DancingLetters from "../components/ui/dancing-letters";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 export default function DeveloperAccess({ onSwitchToLogin, onBack }) {
   const { developerLogin } = useAuth();
@@ -46,8 +48,15 @@ export default function DeveloperAccess({ onSwitchToLogin, onBack }) {
         <div className="flex items-center gap-2 justify-center mb-6">
           <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
           <span className="brand-logo">
-            <span className="devanagari">कृषि</span>{" "}
-            <span className="latin">Setu</span>
+            <DancingLetters
+              text="कृषि Setu"
+              className="inline-flex items-center"
+              getLetterColorClass={(grapheme) =>
+                /\p{Script=Devanagari}/u.test(grapheme)
+                  ? "ff-gotu text-[#E5A93C] tracking-[0.01em]"
+                  : "ff-gotu text-[#F4D06F] tracking-[0.04em]"
+              }
+            />
           </span>
         </div>
 
@@ -90,31 +99,33 @@ export default function DeveloperAccess({ onSwitchToLogin, onBack }) {
             />
           </label>
 
-          <button
+          <LiquidButton
+            label={submitting ? "Verifying…" : "Enter Developer Mode"}
             type="submit"
             disabled={submitting}
-            className="w-full mt-6 py-2.5 bg-[#C9A227] text-[#14140F] text-sm font-medium hover:bg-[#D4AE3D] active:bg-[#B88E1E] transition-colors disabled:opacity-60"
-          >
-            {submitting ? "Verifying…" : "Enter Developer Mode"}
-          </button>
+            className="w-full mt-6"
+          />
         </form>
 
         <p className="text-center text-sm text-[#C9C3AE] mt-6">
-          <button
+          <LiquidButton
+            label="← Back to normal login"
             onClick={onSwitchToLogin}
-            className="text-[#C9A227] hover:text-[#D4AE3D] transition-colors"
-          >
-            ← Back to normal login
-          </button>
+            size="xs"
+            decor={false}
+            className="bg-transparent text-[#C9A227] hover:text-[#D4AE3D] hover:bg-transparent"
+          />
         </p>
 
         {onBack && (
-          <button
+          <LiquidButton
+            label="Back to home"
+            icon={<ArrowLeft className="w-3.5 h-3.5" />}
             onClick={onBack}
-            className="flex items-center gap-1.5 mx-auto mt-4 text-sm text-[#8A8468] hover:text-[#C9A227] transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to home
-          </button>
+            size="sm"
+            decor={false}
+            className="mx-auto mt-4 bg-transparent text-[#8A8468] hover:text-[#C9A227] hover:bg-transparent"
+          />
         )}
       </div>
     </div>

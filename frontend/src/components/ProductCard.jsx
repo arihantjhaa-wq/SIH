@@ -3,6 +3,7 @@ import { BadgePercent, Sprout, Plus, Minus } from "lucide-react";
 import { discountPct, money, MAX_SAVER_THRESHOLD } from "../utils/marketplace.js";
 import ProductPhoto from "./ProductPhoto.jsx";
 import axios from 'axios';
+import { LiquidButton } from "./ui/liquid-glass-button";
 
 
 export default function ProductCard({
@@ -84,34 +85,35 @@ export default function ProductCard({
           {qtyInCart > 0 ? (
             <div
               onClick={(e) => e.stopPropagation()}
-              className="flex items-center justify-between border border-[#D8CBA1] px-2 py-1.5"
+              className="flex items-center justify-between gap-2"
             >
-              <button
+              <LiquidButton
+                icon={<Minus className="w-3.5 h-3.5" />}
                 onClick={() => onSetQty(qtyInCart - (isBusiness ? 5 : 1))}
-                className="w-6 h-6 flex items-center justify-center active:bg-[#1B3A2B] active:text-[#F3ECDD]"
-              >
-                <Minus className="w-3.5 h-3.5" />
-              </button>
-              <span className="text-sm tabular">
+                size="xs"
+                decor={false}
+                className="w-8 h-8 px-0"
+              />
+              <span className="text-sm tabular flex-1 text-center">
                 {qtyInCart} {product.unit}
               </span>
-              <button
+              <LiquidButton
+                icon={<Plus className="w-3.5 h-3.5" />}
                 onClick={() => onSetQty(qtyInCart + (isBusiness ? 5 : 1))}
-                className="w-6 h-6 flex items-center justify-center active:bg-[#1B3A2B] active:text-[#F3ECDD]"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
+                size="xs"
+                decor={false}
+                className="w-8 h-8 px-0"
+              />
             </div>
           ) : (
-            <button
+            <LiquidButton
+              label={isBusiness ? "Add bulk order" : "Add to cart"}
               onClick={(e) => {
                 e.stopPropagation();
                 onAdd();
               }}
-              className="w-full py-2 text-sm border border-[#1B3A2B] text-[#1B3A2B] hover:bg-[#1B3A2B] hover:text-[#F3ECDD] active:bg-[#0E1F17] active:border-[#0E1F17] transition-colors"
-            >
-              {isBusiness ? "Add bulk order" : "Add to cart"}
-            </button>
+              className="w-full"
+            />
           )}
         </div>
       </div>

@@ -17,6 +17,7 @@ import { getForecast } from "../services/forecastService.js";
 import PriceChart from "../components/PriceChart.jsx";
 import WeatherBadges, { WeatherBadgeRow } from "../components/WeatherBadges.jsx";
 import commodities from "../data/commodities.json";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 const INDIAN_STATES = [
   "West Bengal", "Maharashtra", "Karnataka", "Telangana", "Tamil Nadu", "Andhra Pradesh",
@@ -109,28 +110,34 @@ export default function MarketInsights({ onBack }) {
       <div className="bg-[#14140F] text-[#F3ECDD] border-b border-[#33301F]">
         <div className="max-w-6xl mx-auto px-5 py-6">
           <div className="flex items-center justify-between gap-4">
-            <button
+            <LiquidButton
+              label="Back"
+              icon={<ArrowLeft className="w-3.5 h-3.5" />}
               onClick={onBack}
-              className="flex items-center gap-1.5 text-sm border border-[#4A4630] text-[#C9C3AE] hover:border-[#C9A227] hover:text-[#C9A227] px-3 py-1.5 transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Back
-            </button>
+              size="xs"
+              decor={false}
+              className="bg-transparent text-[#C9C3AE] hover:text-[#C9A227] hover:bg-transparent border border-[#4A4630]"
+            />
             <div className="flex items-center gap-3">
               {forecastData && (
-                <button
+                <LiquidButton
+                  label="CSV"
+                  icon={<Download className="w-3.5 h-3.5" />}
                   onClick={handleDownloadCSV}
-                  className="flex items-center gap-1.5 text-sm border border-[#C9A227] text-[#C9A227] hover:bg-[#C9A227] hover:text-[#14140F] px-3 py-1.5 transition-colors"
-                >
-                  <Download className="w-3.5 h-3.5" /> CSV
-                </button>
+                  size="xs"
+                  decor={false}
+                  className="bg-transparent text-[#C9A227] hover:bg-[#C9A227] hover:text-[#14140F] border border-[#C9A227]"
+                />
               )}
-              <button
+              <LiquidButton
+                label="Refresh"
+                icon={<RefreshCw className="w-3.5 h-3.5" />}
                 onClick={handleRefresh}
                 disabled={loading || !commodity || !state}
-                className="flex items-center gap-1.5 text-sm border border-[#4A4630] text-[#C9C3AE] hover:border-[#C9A227] hover:text-[#C9A227] px-3 py-1.5 transition-colors disabled:opacity-40"
-              >
-                <RefreshCw className="w-3.5 h-3.5" /> Refresh
-              </button>
+                size="xs"
+                decor={false}
+                className="bg-transparent text-[#C9C3AE] hover:text-[#C9A227] hover:bg-transparent border border-[#4A4630]"
+              />
             </div>
           </div>
           <div className="mt-8 max-w-xl">
@@ -178,13 +185,13 @@ export default function MarketInsights({ onBack }) {
             </div>
           </div>
           <div className="mt-6 flex items-center gap-3">
-            <button
+            <LiquidButton
+              label="Search"
               onClick={handleSearch}
               disabled={loading || !commodity || !state}
-              className="px-6 py-2.5 bg-[#1B3A2B] text-[#F3ECDD] text-sm font-medium hover:bg-[#14140F] active:bg-[#0E1F17] transition-colors disabled:opacity-60"
-            >
-              Search
-            </button>
+              size="md"
+              className="px-6 disabled:opacity-60"
+            />
             {error && !loading && (
               <div className="flex items-start gap-2 text-sm text-[#C4544A]">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />

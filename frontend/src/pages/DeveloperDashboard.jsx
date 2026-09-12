@@ -12,6 +12,8 @@ import { money } from "../utils/marketplace.js";
 import { getAdminProducts, deleteProduct } from "../services/productService.js";
 import ProductPhoto from "../components/ProductPhoto.jsx";
 import ProfileButton from "../components/ProfileButton.jsx";
+import DancingLetters from "../components/ui/dancing-letters";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 function StatCard({ value, label }) {
   return (
@@ -124,8 +126,15 @@ export default function DeveloperDashboard({ onSwitch, onLogout, user }) {
             <div className="flex items-center gap-2">
               <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
               <span className="brand-logo">
-                <span className="devanagari">कृषि</span>{" "}
-                <span className="latin">Setu</span>
+                <DancingLetters
+                  text="कृषि Setu"
+                  className="inline-flex items-center"
+                  getLetterColorClass={(grapheme) =>
+                    /\p{Script=Devanagari}/u.test(grapheme)
+                      ? "ff-gotu text-[#E5A93C] tracking-[0.01em]"
+                      : "ff-gotu text-[#F4D06F] tracking-[0.04em]"
+                  }
+                />
               </span>
               <span className="ml-2 text-[11px] uppercase tracking-wide border border-[#C9A227] text-[#C9A227] px-2 py-0.5">
                 Developer • Management dashboard
@@ -161,14 +170,16 @@ export default function DeveloperDashboard({ onSwitch, onLogout, user }) {
 
         <div className="mt-6 flex items-center justify-between gap-3">
           <h2 className="ff-display text-xl">Inventory</h2>
-          <button
+          <LiquidButton
+            label="Refresh"
+            icon={<RefreshCcw className="w-3.5 h-3.5" />}
             onClick={fetchAdminProducts}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 text-xs text-[#5C5842] hover:text-[#1B3A2B] disabled:opacity-60"
             aria-label="Refresh"
-          >
-            <RefreshCcw className="w-3.5 h-3.5" /> Refresh
-          </button>
+            size="sm"
+            decor={false}
+            className="bg-transparent text-[#5C5842] hover:text-[#1B3A2B] hover:bg-transparent"
+          />
         </div>
       </div>
 
@@ -238,15 +249,16 @@ export default function DeveloperDashboard({ onSwitch, onLogout, user }) {
                         {p.minBulkQty} {p.unit}
                       </td>
                       <td className="px-4 py-3">
-                        <button
+                        <LiquidButton
+                          label={deletingId === (p._id || p.id) ? "Deleting…" : "Delete"}
+                          icon={<Trash2 className="w-3.5 h-3.5" />}
                           onClick={() => handleDelete(p._id || p.id, p.name)}
                           disabled={!!deletingId}
-                          className="inline-flex items-center gap-1 text-xs text-[#8C2E33] hover:text-[#6B1E2B] disabled:opacity-50"
                           aria-label={`Delete ${p.name}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          {deletingId === (p._id || p.id) ? "Deleting…" : "Delete"}
-                        </button>
+                          size="xs"
+                          decor={false}
+                          className="bg-transparent text-[#8C2E33] hover:text-[#6B1E2B] hover:bg-transparent"
+                        />
                       </td>
                     </tr>
                   ))}
@@ -275,14 +287,15 @@ export default function DeveloperDashboard({ onSwitch, onLogout, user }) {
                     <span className="text-[11px] mt-1 text-[#5C5842]">
                       {p.farmerAdded ? "Farmer listing" : "Seed catalogue"}
                     </span>
-                    <button
+                    <LiquidButton
+                      label={deletingId === (p._id || p.id) ? "Deleting…" : "Remove listing"}
+                      icon={<Trash2 className="w-3.5 h-3.5" />}
                       onClick={() => handleDelete(p._id || p.id, p.name)}
                       disabled={!!deletingId}
-                      className="mt-auto pt-2 flex items-center gap-1 text-xs text-[#8C2E33] hover:text-[#6B1E2B] disabled:opacity-50"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      {deletingId === (p._id || p.id) ? "Deleting…" : "Remove listing"}
-                    </button>
+                      size="xs"
+                      decor={false}
+                      className="mt-auto bg-transparent text-[#8C2E33] hover:text-[#6B1E2B] hover:bg-transparent"
+                    />
                   </div>
                 </div>
               ))}
@@ -294,9 +307,14 @@ export default function DeveloperDashboard({ onSwitch, onLogout, user }) {
       {toast && (
         <div className="fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#14140F] text-[#F3ECDD] text-sm px-4 py-2.5 flex items-center gap-2 shadow-lg border border-[#C9A227]/40 z-50">
           {toast}
-          <button onClick={() => setToast(null)} aria-label="Dismiss">
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <LiquidButton
+            icon={<X className="w-3.5 h-3.5" />}
+            onClick={() => setToast(null)}
+            aria-label="Dismiss"
+            size="xs"
+            decor={false}
+            className="ml-2 w-6 h-6 px-0 bg-[#2A2825] hover:bg-[#3A382F]"
+          />
         </div>
       )}
     </div>

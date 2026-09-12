@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Minus, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { getForecast } from "../services/forecastService.js";
 import PriceChart from "./PriceChart.jsx";
+import { LiquidButton } from "./ui/liquid-glass-button";
 
 export default function ForecastAdvisor({
   commodity,
@@ -63,12 +64,13 @@ export default function ForecastAdvisor({
           <AlertCircle className="w-4 h-4 text-[#C4544A] mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm text-[#C4544A]">{error}</p>
-            <button
+            <LiquidButton
+              label="Try again"
               onClick={fetchForecast}
-              className="mt-2 text-xs text-[#8A8468] underline hover:text-[#1B3A2B]"
-            >
-              Try again
-            </button>
+              size="xs"
+              decor={false}
+              className="mt-2 bg-transparent text-[#8A8468] underline hover:text-[#1B3A2B] hover:bg-transparent"
+            />
           </div>
         </div>
       </div>
@@ -110,13 +112,15 @@ export default function ForecastAdvisor({
             {commodity} · {state}
           </p>
         </div>
-        <button
+        <LiquidButton
+          icon={<RefreshCw className="w-4 h-4" />}
           onClick={fetchForecast}
-          className="text-[#8A8468] hover:text-[#1B3A2B] transition-colors"
+          aria-label="Refresh forecast"
           title="Refresh forecast"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+          size="xs"
+          decor={false}
+          className="w-7 h-7 px-0 bg-transparent text-[#8A8468] hover:text-[#1B3A2B] hover:bg-transparent"
+        />
       </div>
       <div className="flex items-center gap-2 mb-3">
         <span className="text-xs text-[#5C5842]">7-day outlook</span>
@@ -144,12 +148,13 @@ export default function ForecastAdvisor({
         </p>
       </div>
       {onSelectForecast && (
-        <button
+        <LiquidButton
+          label="View detailed forecast →"
           onClick={() => onSelectForecast(forecast)}
-          className="w-full text-sm text-[#1B3A2B] hover:text-[#C9A227] transition-colors underline"
-        >
-          View detailed forecast →
-        </button>
+          size="xs"
+          decor={false}
+          className="w-full bg-transparent text-[#1B3A2B] underline hover:text-[#C9A227] hover:bg-transparent"
+        />
       )}
     </div>
   );

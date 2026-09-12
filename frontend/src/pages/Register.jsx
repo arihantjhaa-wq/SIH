@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Leaf, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import DancingLetters from "../components/ui/dancing-letters";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 function Field({ label, error, children }) {
   return (
@@ -241,8 +243,15 @@ export default function Register({
           />
 
           <span className="brand-logo">
-            <span className="devanagari">कृषि</span>{" "}
-            <span className="latin">Setu</span>
+            <DancingLetters
+              text="कृषि Setu"
+              className="inline-flex items-center"
+              getLetterColorClass={(grapheme) =>
+                /\p{Script=Devanagari}/u.test(grapheme)
+                  ? "ff-gotu text-[#E5A93C] tracking-[0.01em]"
+                  : "ff-gotu text-[#F4D06F] tracking-[0.04em]"
+              }
+            />
           </span>
         </div>
 
@@ -377,25 +386,16 @@ export default function Register({
                 style={INPUT_STYLE}
               />
 
-              <button
-                type="button"
-                onClick={() =>
-                  setShowPassword((prev) => !prev)
-                }
+              <LiquidButton
+                icon={showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                onClick={() => setShowPassword((prev) => !prev)}
                 disabled={submitting}
-                aria-label={
-                  showPassword
-                    ? "Hide password"
-                    : "Show password"
-                }
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8A8468] hover:text-[#C9A227]"
-              >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-              </button>
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                size="xs"
+                decor={false}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 px-0"
+                style={{ transform: "translateY(-50%)" }}
+              />
             </div>
           </Field>
 
@@ -419,39 +419,36 @@ export default function Register({
           </Field>
 
           {/* Register Button */}
-          <button
+          <LiquidButton
+            label={submitting ? "Creating account…" : "Register"}
             type="submit"
             disabled={submitting}
-            className="w-full mt-6 py-2.5 bg-[#C9A227] text-[#14140F] text-sm font-medium hover:bg-[#D4AE3D] active:bg-[#B88E1E] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {submitting
-              ? "Creating account…"
-              : "Register"}
-          </button>
+            className="w-full mt-6"
+          />
         </form>
 
         {/* Login */}
         <p className="text-center text-sm text-[#C9C3AE] mt-6">
           Already have an account?{" "}
-          <button
-            type="button"
+          <LiquidButton
+            label="Log in"
+            size="xs"
+            decor={false}
             onClick={onSwitchToLogin}
-            className="text-[#C9A227] hover:text-[#D4AE3D] transition-colors"
-          >
-            Log in
-          </button>
+            className="bg-transparent text-[#C9A227] hover:text-[#D4AE3D] hover:bg-transparent"
+          />
         </p>
 
         {/* Back */}
         {onBack && (
-          <button
-            type="button"
+          <LiquidButton
+            label="Back to role selection"
+            icon={<ArrowLeft className="w-3.5 h-3.5" />}
             onClick={onBack}
-            className="flex items-center gap-1.5 mx-auto mt-6 text-sm text-[#8A8468] hover:text-[#C9A227] transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to role selection
-          </button>
+            size="xs"
+            decor={false}
+            className="mx-auto mt-6 bg-transparent text-[#8A8468] hover:text-[#C9A227] hover:bg-transparent"
+          />
         )}
 
       </div>

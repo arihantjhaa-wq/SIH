@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ProfileAvatar } from "../components/ProfileButton.jsx";
+import DancingLetters from "../components/ui/dancing-letters";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 function safeText(v, fallback = "—") {
   if (v == null) return fallback;
@@ -53,13 +55,12 @@ export default function UserProfile() {
       <div className="min-h-screen w-full bg-[#14140F] text-[#F3ECDD] flex items-center justify-center px-5">
         <div className="max-w-md w-full text-center py-16">
           <p className="text-sm text-[#C9C3AE]">You need to sign in to view your profile.</p>
-          <button
-            type="button"
+          <LiquidButton
+            label="Go to sign in"
             onClick={() => navigate("/", { replace: true })}
-            className="mt-4 px-4 py-2 bg-[#C9A227] text-[#14140F] text-sm font-medium hover:bg-[#D4AE3D] transition-colors"
-          >
-            Go to sign in
-          </button>
+            size="sm"
+            className="mt-4 px-4 text-[#14140F] bg-[#C9A227] hover:bg-[#D4AE3D]"
+          />
         </div>
       </div>
     );
@@ -87,19 +88,27 @@ export default function UserProfile() {
       <div className="bg-[#14140F] text-[#F3ECDD]">
         <header className="border-b border-[#33301F]">
           <div className="max-w-6xl mx-auto px-5 py-5 flex items-center justify-between gap-4">
-            <button
-              type="button"
+            <LiquidButton
+              label="Back"
+              icon={<ArrowLeft className="w-3.5 h-3.5" />}
               onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-1.5 text-sm text-[#C9C3AE] hover:text-[#C9A227] transition-colors"
               aria-label="Go back"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back
-            </button>
+              size="xs"
+              decor={false}
+              className="bg-transparent text-[#C9C3AE] hover:text-[#C9A227] hover:bg-transparent"
+            />
             <div className="flex items-center gap-2">
               <Leaf className="w-5 h-5 text-[#E5A93C]" strokeWidth={1.75} />
               <span className="brand-logo">
-                <span className="devanagari">कृषि</span>{" "}
-                <span className="latin">Setu</span>
+                <DancingLetters
+                  text="कृषि Setu"
+                  className="inline-flex items-center"
+                  getLetterColorClass={(grapheme) =>
+                    /\p{Script=Devanagari}/u.test(grapheme)
+                      ? "ff-gotu text-[#E5A93C] tracking-[0.01em]"
+                      : "ff-gotu text-[#F4D06F] tracking-[0.04em]"
+                  }
+                />
               </span>
               <span className="hidden sm:inline ml-2 text-[11px] uppercase tracking-wide border border-[#C9A227] text-[#C9A227] px-2 py-0.5">
                 Profile
@@ -203,20 +212,19 @@ export default function UserProfile() {
             </dl>
 
             <div className="px-6 sm:px-8 pb-6 flex flex-wrap gap-2">
-              <button
-                type="button"
+              <LiquidButton
+                label="Back"
+                icon={<ArrowLeft className="w-3.5 h-3.5" />}
                 onClick={() => navigate(-1)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-[#D8CBA1] text-[#1B3A2B] hover:bg-[#FBF7EC] transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" /> Back
-              </button>
-              <button
-                type="button"
+                size="sm"
+                className="px-4 border border-[#D8CBA1] text-[#1B3A2B] hover:bg-[#FBF7EC] hover:bg-transparent"
+              />
+              <LiquidButton
+                label="Home"
                 onClick={() => navigate("/", { replace: false })}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-[#1B3A2B] text-white hover:bg-[#0E1F17] transition-colors"
-              >
-                Home
-              </button>
+                size="sm"
+                className="px-4 bg-[#1B3A2B] text-white hover:bg-[#0E1F17]"
+              />
             </div>
           </div>
 

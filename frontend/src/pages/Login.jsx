@@ -7,24 +7,14 @@ import {
   Sprout,
   Store,
   RefreshCcw,
+  Mail,
+  Lock,
 } from "lucide-react";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-
-const FIELD_FOCUS = `.fm-field:focus { border-color: #C9A227; }`;
-
-function Field({ label, error, children }) {
-  return (
-    <label className="block mt-4 text-sm">
-      <span className="block text-[#C9C3AE] mb-1.5">{label}</span>
-      {children}
-
-      {error && (
-        <span className="block text-xs text-[#C4544A] mt-1">{error}</span>
-      )}
-    </label>
-  );
-}
+import DancingLetters from "../components/ui/dancing-letters";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 // Role-specific presentation copy + accent icon
 const ROLE_COPY = {
@@ -71,6 +61,24 @@ export default function Login({
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState(null);
+  const [focusedInput, setFocusedInput] = useState(null);
+
+  // 3D card tilt effect
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateX = useTransform(mouseY, [-300, 300], [8, -8]);
+  const rotateY = useTransform(mouseX, [-300, 300], [-8, 8]);
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    mouseX.set(e.clientX - rect.left - rect.width / 2);
+    mouseY.set(e.clientY - rect.top - rect.height / 2);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
 
   function update(field, value) {
     setForm((prev) => ({
@@ -134,17 +142,6 @@ export default function Login({
       const dest = devFlag ? "/developer" : `/${role}`;
       navigate(dest, { replace: true });
     } catch (err) {
-      /*
-       * Handle Axios errors.
-       *
-       * Axios errors usually contain:
-       * err.response.status
-       * err.response.data
-       *
-       * For a 404, the backend route itself may not exist,
-       * so don't show the raw Axios error to the user.
-       */
-
       const status = err?.response?.status;
 
       if (status === 404) {
@@ -152,7 +149,7 @@ export default function Login({
           "Login service is currently unavailable. Please try again later."
         );
       } else if (status === 401) {
-        setServerError("Incorrect email or password. Please try again.");
+        setServerError("Incorrect username or password. Please try again.");
       } else if (status === 403) {
         setServerError("You are not authorized to log in.");
       } else if (status === 400) {
@@ -182,188 +179,251 @@ export default function Login({
 
   return (
     <div
-      className="min-h-screen w-full bg-[#14140F] text-[#F3ECDD] flex items-center justify-center px-5"
-      style={{
-        fontFamily: "'Work Sans', ui-sans-serif, system-ui, sans-serif",
-      }}
+      className="min-h-screen w-full bg-[#0d0d12] text-white relative overflow-hidden flex items-center justify-center px-5"
+      style={{ fontFamily: "'Work Sans', ui-sans-serif, system-ui, sans-serif" }}
     >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap');
+      {/* Purple gradient backdrop */}
+      <div className="absolute inset-0 bg-gradient-to-b from-purple-500/40 via-purple-700/50 to-black" />
 
-        .ff-display {
-          font-family: 'Fraunces', ui-serif, Georgia, serif;
-        }
+      {/* Amethyst glow blobs */}
+      <motion.div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[100vh] h-[60vh] rounded-b-full bg-purple-300/20 blur-[60px]"
+        animate={{ opacity: [0.15, 0.3, 0.15], scale: [0.98, 1.02, 0.98] }}
+        transition={{ duration: 8, repeat: Infinity, repeatType: "mirror" }}
+      />
+      <motion.div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[90vh] h-[90vh] rounded-t-full bg-purple-400/20 blur-[60px]"
+        animate={{ opacity: [0.3, 0.5, 0.3], scale: [1, 1.1, 1] }}
+        transition={{ duration: 6, repeat: Infinity, repeatType: "mirror", delay: 1 }}
+      />
 
-        ${FIELD_FOCUS}
-      `}</style>
-
-      <div className="max-w-md w-full py-12">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="w-full max-w-md relative z-10 py-12"
+        style={{ perspective: 1500 }}
+      >
         {/* Logo */}
         <div className="flex items-center gap-2.5 justify-center mb-8">
           <Leaf className="w-6 h-6 text-[#E5A93C]" strokeWidth={1.75} />
-
           <span className="brand-logo">
-            <span className="devanagari">कृषि</span>{" "}
-            <span className="latin">Setu</span>
-          </span>
-        </div>
-
-        {/* Role accent icon */}
-        <div className="flex justify-center mb-4">
-          <span className="w-12 h-12 border border-[#33301F] bg-[#1D1C14] flex items-center justify-center">
-            <RoleIcon
-              className="w-6 h-6 text-[#C9A227]"
-              strokeWidth={1.5}
+            <DancingLetters
+              text="कृषि Setu"
+              className="inline-flex items-center"
+              getLetterColorClass={(grapheme) =>
+                /\p{Script=Devanagari}/u.test(grapheme)
+                  ? "ff-gotu text-[#E5A93C] tracking-[0.01em]"
+                  : "ff-gotu text-[#F4D06F] tracking-[0.04em]"
+              }
             />
           </span>
         </div>
 
-        {/* Heading */}
-        <h1 className="ff-display text-3xl text-center leading-tight">
-          {copy.heading}
-        </h1>
-
-        <p className="text-center text-sm text-[#C9C3AE] mt-2 max-w-sm mx-auto">
-          {copy.tagline}
-        </p>
-
-        <p className="text-center text-[11px] uppercase tracking-widest text-[#8A8468] mt-4">
-          {copy.accent}
-        </p>
-
-        {/* Server Error */}
-        {serverError && (
-          <div
-            role="alert"
-            className="mt-6 border border-[#C4544A]/40 bg-[#C4544A]/10 px-4 py-3 text-sm text-[#C4544A]"
-          >
-            {serverError}
-          </div>
-        )}
-
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="mt-6" noValidate>
-          {/* Username */}
-          <Field label="Username" error={errors.username}>
-            <input
-              type="text"
-              value={form.username}
-              onChange={(e) => update("username", e.target.value)}
-              placeholder="your_username"
-              autoComplete="username"
-              disabled={submitting}
-              className="fm-field"
+        <motion.div
+          className="relative"
+          style={{ rotateX, rotateY }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* Glass card — the new sign-in-card-2 look */}
+          <div className="relative rounded-2xl overflow-hidden border border-white/[0.05] bg-black/40 backdrop-blur-xl shadow-2xl p-6">
+            {/* Card inner pattern */}
+            <div
+              className="absolute inset-0 opacity-[0.03] pointer-events-none"
               style={{
-                width: "100%",
-                border: "1px solid #4A4630",
-                background: "#14140F",
-                color: "#F3ECDD",
-                padding: "0.6rem 0.75rem",
-                fontSize: "0.875rem",
-                outline: "none",
+                backgroundImage: `linear-gradient(135deg, white 0.5px, transparent 0.5px), linear-gradient(45deg, white 0.5px, transparent 0.5px)`,
+                backgroundSize: "30px 30px",
               }}
             />
-          </Field>
 
-          {/* Password */}
-          <Field label="Password" error={errors.password}>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={form.password}
-                onChange={(e) => update("password", e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                disabled={submitting}
-                className="fm-field pr-10"
-                style={{
-                  width: "100%",
-                  border: "1px solid #4A4630",
-                  background: "#14140F",
-                  color: "#F3ECDD",
-                  padding: "0.6rem 0.75rem",
-                  fontSize: "0.875rem",
-                  outline: "none",
-                }}
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                disabled={submitting}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8A8468] hover:text-[#C9A227]"
+            {/* Role accent icon */}
+            <div className="flex justify-center mb-4">
+              <motion.span
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", duration: 0.8 }}
+                className="w-12 h-12 rounded-full border border-white/10 bg-white/5 flex items-center justify-center"
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-              </button>
+                <RoleIcon className="w-6 h-6 text-[#C9A227]" strokeWidth={1.5} />
+              </motion.span>
             </div>
-          </Field>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full mt-6 py-2.5 bg-[#C9A227] text-[#14140F] text-sm font-medium hover:bg-[#D4AE3D] active:bg-[#B88E1E] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {submitting ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
-
-        {/* Register */}
-        <p className="text-center text-sm text-[#C9C3AE] mt-6">
-          Don't have an account?{" "}
-          <button
-            type="button"
-            onClick={onSwitchToRegister}
-            className="text-[#C9A227] hover:text-[#D4AE3D] transition-colors"
-          >
-            {copy.register}
-          </button>
-        </p>
-
-        {/* Developer Access */}
-        {onSwitchToDeveloperAccess && (
-          <p className="text-center text-sm text-[#C9C3AE] mt-2">
-            <button
-              type="button"
-              onClick={onSwitchToDeveloperAccess}
-              className="text-[#8A8468] hover:text-[#C9A227] transition-colors text-xs"
+            {/* Heading */}
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/80 text-center"
             >
-              Developer Access
-            </button>
-          </p>
-        )}
+              {copy.heading}
+            </motion.h1>
 
-        {/* Switch role (secondary) */}
-        {onSwitchRole && (
-          <p className="text-center text-sm text-[#C9C3AE] mt-4">
-            <button
-              type="button"
-              onClick={() => onSwitchRole(copy.switchRole)}
-              className="inline-flex items-center gap-1.5 text-[#8A8468] hover:text-[#C9A227] transition-colors text-sm"
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-center text-xs text-white/60 mt-1"
             >
-              <RefreshCcw className="w-3.5 h-3.5" />
-              {copy.switchLabel}
-            </button>
-          </p>
-        )}
+              {copy.tagline}
+            </motion.p>
 
-        {/* Back */}
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex items-center gap-1.5 mx-auto mt-6 text-sm text-[#8A8468] hover:text-[#C9A227] transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to role selection
-          </button>
-        )}
-      </div>
+            {/* Server Error */}
+            {serverError && (
+              <div
+                role="alert"
+                className="mt-4 border border-[#C4544A]/40 bg-[#C4544A]/10 px-4 py-3 text-sm text-[#C4544A] rounded-lg"
+              >
+                {serverError}
+              </div>
+            )}
+
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
+              {/* Username */}
+              <div className="relative flex items-center overflow-hidden rounded-lg bg-white/5 border border-white/10 focus-within:border-white/20 focus-within:bg-white/10 transition-all duration-300">
+                <Mail className={`absolute left-3 w-4 h-4 transition-all duration-300 ${
+                  focusedInput === "username" ? "text-white" : "text-white/40"
+                }`} />
+                <input
+                  type="text"
+                  value={form.username}
+                  onChange={(e) => update("username", e.target.value)}
+                  onFocus={() => setFocusedInput("username")}
+                  onBlur={() => setFocusedInput(null)}
+                  placeholder="Username"
+                  autoComplete="username"
+                  disabled={submitting}
+                  className="w-full bg-transparent text-white placeholder:text-white/30 h-10 pl-10 pr-3 text-sm outline-none"
+                />
+              </div>
+              {errors.username && (
+                <span className="block text-xs text-[#C4544A] mt-1">{errors.username}</span>
+              )}
+
+              {/* Password */}
+              <div className="relative flex items-center overflow-hidden rounded-lg bg-white/5 border border-white/10 focus-within:border-white/20 focus-within:bg-white/10 transition-all duration-300">
+                <Lock className={`absolute left-3 w-4 h-4 transition-all duration-300 ${
+                  focusedInput === "password" ? "text-white" : "text-white/40"
+                }`} />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => update("password", e.target.value)}
+                  onFocus={() => setFocusedInput("password")}
+                  onBlur={() => setFocusedInput(null)}
+                  placeholder="Password"
+                  autoComplete="current-password"
+                  disabled={submitting}
+                  className="w-full bg-transparent text-white placeholder:text-white/30 h-10 pl-10 pr-10 text-sm outline-none"
+                />
+                <LiquidButton
+                  icon={showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  disabled={submitting}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  size="xs"
+                  decor={false}
+                  className="absolute right-3 w-8 h-8 px-0 bg-transparent hover:bg-white/10"
+                  style={{ top: "50%", transform: "translateY(-50%)" }}
+                />
+              </div>
+              {errors.password && (
+                <span className="block text-xs text-[#C4544A] mt-1">{errors.password}</span>
+              )}
+
+              {/* Submit */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={submitting}
+                className="w-full relative group/button mt-2"
+              >
+                <div className="absolute inset-0 bg-white/10 rounded-lg blur-lg opacity-0 group-hover/button:opacity-70 transition-opacity duration-300" />
+                <div className="relative overflow-hidden bg-white text-black font-medium h-10 rounded-lg transition-all duration-300 flex items-center justify-center">
+                  <AnimatePresence mode="wait">
+                    {submitting ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center justify-center"
+                      >
+                        <div className="w-4 h-4 border-2 border-black/70 border-t-transparent rounded-full animate-spin" />
+                      </motion.div>
+                    ) : (
+                      <motion.span
+                        key="button-text"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="text-sm font-medium"
+                      >
+                        Sign in
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.button>
+
+              {/* Register */}
+              {onSwitchToRegister && (
+                <p className="text-center text-xs text-white/60 mt-3">
+                  Don't have an account?{" "}
+                  <LiquidButton
+                    label={copy.register}
+                    onClick={onSwitchToRegister}
+                    size="xs"
+                    decor={false}
+                    className="bg-transparent hover:bg-white/10 text-white"
+                  />
+                </p>
+              )}
+
+              {/* Developer Access */}
+              {onSwitchToDeveloperAccess && (
+                <p className="text-center text-xs text-white/60 mt-1">
+                  <LiquidButton
+                    label="Developer Access"
+                    onClick={onSwitchToDeveloperAccess}
+                    size="xs"
+                    decor={false}
+                    className="bg-transparent text-white/40 hover:text-white/70 hover:bg-transparent"
+                  />
+                </p>
+              )}
+
+              {/* Switch role (secondary) */}
+              {onSwitchRole && (
+                <p className="text-center text-xs text-white/60 mt-1">
+                  <LiquidButton
+                    label={copy.switchLabel}
+                    icon={<RefreshCcw className="w-3.5 h-3.5" />}
+                    onClick={() => onSwitchRole(copy.switchRole)}
+                    size="xs"
+                    decor={false}
+                    className="bg-transparent text-white/40 hover:text-white hover:bg-transparent"
+                  />
+                </p>
+              )}
+
+              {/* Back */}
+              {onBack && (
+                <LiquidButton
+                  label="Back to role selection"
+                  icon={<ArrowLeft className="w-3.5 h-3.5" />}
+                  onClick={onBack}
+                  size="xs"
+                  decor={false}
+                  className="mx-auto mt-4 bg-transparent text-white/40 hover:text-white hover:bg-transparent"
+                />
+              )}
+            </form>
+          </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

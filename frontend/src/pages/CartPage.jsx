@@ -21,6 +21,7 @@ import {
   createTransportOrder,
 } from "../services/transportService.js";
 import { useCart } from "../context/CartContext.jsx";
+import { LiquidButton } from "../components/ui/liquid-glass-button";
 
 // ---------------------------------------------------------------------------
 // Helpers: Loading / Error / Transport display components
@@ -46,12 +47,13 @@ function TransportErrorState({ message, onRetry }) {
           </p>
           <p className="text-sm text-[#5C5842] mt-1">{message}</p>
           {onRetry && (
-            <button
+            <LiquidButton
+              label="Retry"
               onClick={onRetry}
-              className="mt-3 text-xs text-[#1B3A2B] underline hover:text-[#0E1F17]"
-            >
-              Retry
-            </button>
+              size="xs"
+              decor={false}
+              className="mt-3 bg-transparent text-[#1B3A2B] underline hover:text-[#0E1F17] hover:bg-transparent"
+            />
           )}
         </div>
       </div>
@@ -365,15 +367,15 @@ export default function CartPage({
             </div>
           )}
 
-          <button
+          <LiquidButton
+            label="Back to shopping"
             onClick={() => {
               setOrderPlaced(null);
               onBack();
             }}
-            className="mt-8 mx-auto block px-4 py-2 text-sm border border-[#1B3A2B] text-[#1B3A2B] hover:bg-[#1B3A2B] hover:text-[#F3ECDD] transition-colors"
-          >
-            Back to shopping
-          </button>
+            size="sm"
+            className="mt-8 mx-auto"
+          />
         </div>
       </main>
     );
@@ -382,12 +384,14 @@ export default function CartPage({
   // ---- Cart listing (main) ------------------------------------------------
   return (
     <main className="max-w-3xl mx-auto px-5 py-10">
-      <button
+      <LiquidButton
+        label="Continue shopping"
+        icon={<ArrowLeft className="w-3.5 h-3.5" />}
         onClick={onBack}
-        className="flex items-center gap-1.5 text-sm text-[#5C5842] hover:text-[#1B3A2B] transition-colors"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" /> Continue shopping
-      </button>
+        size="xs"
+        decor={false}
+        className="bg-transparent text-[#5C5842] hover:text-[#1B3A2B] hover:bg-transparent"
+      />
 
       <div className="flex items-center gap-2 mt-6 mb-6">
         <ShoppingCart className="w-5 h-5 text-[#1B3A2B]" />
@@ -399,12 +403,11 @@ export default function CartPage({
           <p className="text-sm text-[#5C5842]">
             Nothing added yet — head back to the catalogue to start an order.
           </p>
-          <button
+          <LiquidButton
+            label="Browse products"
             onClick={onBack}
-            className="mt-4 px-4 py-2 text-sm border border-[#1B3A2B] text-[#1B3A2B] hover:bg-[#1B3A2B] hover:text-[#F3ECDD] transition-colors"
-          >
-            Browse products
-          </button>
+            size="sm"
+          />
         </div>
       ) : (
         <div className="space-y-6">
@@ -431,24 +434,30 @@ export default function CartPage({
                   )}
                 </div>
                 <div className="flex items-center gap-1">
-                  <button
+                  <LiquidButton
+                    icon={<Minus className="w-3.5 h-3.5" />}
                     onClick={() => setQty(product, qty - (isBusiness ? 5 : 1))}
-                    className="w-7 h-7 flex items-center justify-center border border-[#D8CBA1] hover:border-[#1B3A2B] active:bg-[#1B3A2B] active:text-[#F3ECDD]"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <button
+                    aria-label="Decrease quantity"
+                    size="xs"
+                    decor={false}
+                    className="w-7 h-7 px-0"
+                  />
+                  <LiquidButton
+                    icon={<Plus className="w-3.5 h-3.5" />}
                     onClick={() => setQty(product, qty + (isBusiness ? 5 : 1))}
-                    className="w-7 h-7 flex items-center justify-center border border-[#D8CBA1] hover:border-[#1B3A2B] active:bg-[#1B3A2B] active:text-[#F3ECDD]"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                  <button
+                    aria-label="Increase quantity"
+                    size="xs"
+                    decor={false}
+                    className="w-7 h-7 px-0"
+                  />
+                  <LiquidButton
+                    icon={<Trash2 className="w-4 h-4" />}
                     onClick={() => removeFromCart(product.id)}
-                    className="w-7 h-7 flex items-center justify-center text-[#8C2E33] hover:text-[#6B1E2B]"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    aria-label="Remove from cart"
+                    size="xs"
+                    decor={false}
+                    className="w-7 h-7 px-0 bg-transparent text-[#8C2E33] hover:text-[#6B1E2B] hover:bg-transparent"
+                  />
                 </div>
               </div>
             ))}
@@ -525,21 +534,22 @@ export default function CartPage({
               </div>
             )}
 
-            <button
+            <LiquidButton
+              label={placingOrder ? "Placing order…" : "Proceed to checkout"}
+              icon={
+                placingOrder ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : undefined
+              }
               onClick={handlePlaceOrder}
               disabled={placingOrder || !!transportError}
-              title={transportError ? "Fix the delivery issue before placing the order" : undefined}
-              className="w-full mt-4 py-2.5 bg-[#1B3A2B] text-[#F3ECDD] text-sm hover:bg-[#14140F] active:bg-[#0E1F17] transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {placingOrder ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Placing order…
-                </>
-              ) : (
-                "Proceed to checkout"
-              )}
-            </button>
+              title={
+                transportError
+                  ? "Fix the delivery issue before placing the order"
+                  : undefined
+              }
+              className="w-full mt-4"
+            />
 
             <p className="text-[11px] text-center text-[#8A8468] mt-2">
               Price and delivery are revalidated with the server before your order is confirmed.
